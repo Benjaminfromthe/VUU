@@ -184,22 +184,6 @@ export default function App() {
 
   // Map representation helper (simulated map state using pure modern CSS/SVG)
   const renderMockMap = () => {
-    if (useLiveGpsMap) {
-      return (
-        <div className="relative w-full rounded-2xl overflow-hidden border border-slate-800 shadow-md">
-          <button 
-            type="button"
-            onClick={() => setUseLiveGpsMap(false)}
-            className="absolute top-3 right-3 z-[1000] bg-slate-950/90 text-[10.5px] font-bold text-slate-350 border border-slate-800 px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Layers className="w-4 h-4 text-slate-400" />
-            Switch to Vector Art
-          </button>
-          <RideMap />
-        </div>
-      );
-    }
-
     // Determine driver path animation keyframes based on ride status
     const status = activeRide?.status || 'idle';
     let riderPos = { x: 40, y: 35 };
@@ -219,39 +203,23 @@ export default function App() {
     }
 
     return (
-      <div className="relative w-full h-44 bg-slate-950 border border-slate-800/80 rounded-2xl overflow-hidden shadow-inner">
-        {/* Toggle to Live GPS map */}
-        <button 
-          type="button"
-          onClick={() => setUseLiveGpsMap(true)}
-          className="absolute top-2.5 right-2 a z-20 bg-slate-950/90 text-[10px] font-extrabold text-indigo-400 border border-slate-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-        >
-          <Layers className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
-          Live GPS
-        </button>
+      <div className="relative w-full h-full bg-[#060814] overflow-hidden">
         {/* SVG background grid and path */}
-        <svg className="absolute inset-0 w-full h-full opacity-30 select-none" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full opacity-60 select-none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+            <pattern id="tactical-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="1" />
+              <circle cx="0" cy="0" r="1" fill="#00F5FF" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#tactical-grid)" />
           
-          {/* Main roadways */}
-          <path d="M 0 35 H 300" stroke="#ffd60a" strokeWidth="2" strokeDasharray="4 2" fill="none" />
-          <path d="M 120 0 V 200" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
-          <path d="M 220 0 V 200" stroke="#ffd60a" strokeWidth="1" fill="none" />
-          <path d="M 0 100 Q 150 160 300 100" stroke="rgba(255,255,255,0.15)" strokeWidth="4" fill="none" />
+          {/* Main roadways - Neon Paths */}
+          <path d="M -50 400 Q 200 450 500 200 T 1200 300" stroke="#00F5FF" strokeWidth="2" strokeDasharray="8 4" fill="none" className="opacity-40" />
+          <path d="M 300 0 V 800" stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
+          <path d="M 700 0 V 800" stroke="#FFB800" strokeWidth="1" strokeDasharray="10 10" fill="none" className="opacity-50" />
+          <path d="M 0 600 Q 400 700 1200 400" stroke="#00F5FF" strokeWidth="4" fill="none" style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.5))' }} />
         </svg>
-
-        {/* Abstract Paris landmarks on the mini map */}
-        <div className="absolute top-4 left-6 text-[10px] font-mono text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800 pointer-events-none">
-          📍 Gare du Nord
-        </div>
-        <div className="absolute bottom-6 right-8 text-[10px] font-mono text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800 pointer-events-none">
-          🇫🇷 Eiffel Tower
-        </div>
 
         {/* Dynamic Route Line */}
         {activeRide && (
@@ -262,10 +230,11 @@ export default function App() {
                 y1={`${riderPos.y}%`} 
                 x2={`${destPos.x}%`} 
                 y2={`${destPos.y}%`} 
-                stroke="#ffd60a" 
-                strokeWidth="2.5" 
-                strokeDasharray="5 4" 
+                stroke="#00F5FF" 
+                strokeWidth="3" 
+                strokeDasharray="8 6" 
                 className="animate-pulse"
+                style={{ filter: 'drop-shadow(0 0 8px rgba(0,245,255,0.8))' }}
               />
             </svg>
           </div>
@@ -277,10 +246,13 @@ export default function App() {
           className="absolute transition-all duration-1000 ease-in-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
           style={{ left: `${riderPos.x}%`, top: `${riderPos.y}%` }}
         >
-          <div className="flex items-center justify-center w-6 h-6 bg-blue-500 text-white rounded-full shadow-lg border-2 border-white animate-bounce">
-            <UserIcon className="w-3.5 h-3.5" />
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-[#00F5FF] bg-[#060814] shadow-[0_0_20px_rgba(0,245,255,0.6)]">
+             <div className="absolute inset-0 rounded-full border border-[#00F5FF] animate-ping opacity-60"></div>
+             <div className="w-3 h-3 bg-[#00F5FF] rounded-full shadow-[0_0_10px_#00F5FF]"></div>
           </div>
-          <span className="text-[9px] font-semibold text-white bg-slate-900/90 px-1 rounded shadow-sm border border-slate-800 mt-1">Rider</span>
+          <div className="mt-2 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] bg-[#060814]/80 px-2 py-1 border border-[#00F5FF]/30 backdrop-blur-md">
+            Target <br/><span className="text-white">Loc_01</span>
+          </div>
         </div>
 
         {/* Destination Pin */}
@@ -289,10 +261,12 @@ export default function App() {
             className="absolute transition-all duration-1000 ease-in-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
             style={{ left: `${destPos.x}%`, top: `${destPos.y}%` }}
           >
-            <div className="flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full shadow-lg border-2 border-white">
-              <MapPin className="w-3.5 h-3.5" />
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-slate-500 bg-[#060814]">
+               <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
             </div>
-            <span className="text-[9px] font-semibold text-white bg-slate-900/90 px-1 rounded shadow-sm border border-slate-800 mt-1">Dest</span>
+            <div className="mt-2 text-[10px] uppercase font-mono tracking-widest text-slate-300 bg-[#060814]/80 px-2 py-1 border border-slate-700 backdrop-blur-md">
+              Extract <br/><span className="text-white">Drop_Zone</span>
+            </div>
           </div>
         )}
 
@@ -302,25 +276,30 @@ export default function App() {
             className="absolute transition-all duration-1000 ease-in-out -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-20"
             style={{ left: `${driverPos.x}%`, top: `${driverPos.y}%` }}
           >
-            <div className="flex items-center justify-center w-8 h-8 bg-amber-400 text-slate-950 rounded-full shadow-xl border-2 border-slate-950">
-              <Car className="w-4 h-4" />
+            <div className="relative flex items-center justify-center w-12 h-12 rounded-xl border border-[#FFB800] bg-[#FFB800]/10 backdrop-blur-md shadow-[0_0_25px_rgba(255,184,0,0.4)]">
+               <div className="absolute inset-0 rounded-xl border border-[#FFB800] animate-ping opacity-30"></div>
+               <Car className="w-6 h-6 text-[#FFB800]" />
             </div>
-            <span className="text-[9px] font-bold text-slate-950 bg-amber-400 px-1 rounded shadow-sm scale-95 mt-1 border border-slate-950">VUU CAB</span>
+            <div className="mt-2 text-[10px] uppercase font-mono tracking-widest text-[#FFB800] bg-[#060814]/80 px-2 py-1 border border-[#FFB800]/30 backdrop-blur-md">
+              VUU Interceptor <br/><span className="text-white">{activeRide.status}</span>
+            </div>
           </div>
         )}
 
         {/* Radar Overlay (Searching state) */}
         {isSearching && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-[1px] pointer-events-none">
-            <div className="relative flex items-center justify-center w-16 h-16">
-              <div className="absolute inset-0 border-2 border-amber-400 rounded-full animate-ping opacity-60"></div>
-              <div className="absolute inset-2 border-2 border-amber-500 rounded-full animate-ping opacity-30"></div>
-              <div className="w-10 h-10 bg-amber-400/20 border border-amber-400 rounded-full flex items-center justify-center animate-pulse">
-                <Compass className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
+          <div className="absolute inset-0 flex items-center justify-center bg-[#060814]/60 backdrop-blur-sm pointer-events-none z-30">
+            <div className="relative flex items-center justify-center w-48 h-48">
+              <div className="absolute inset-0 border border-[#00F5FF] rounded-full animate-ping opacity-40" style={{ animationDuration: '2s' }}></div>
+              <div className="absolute inset-4 border border-[#00F5FF] rounded-full animate-ping opacity-20" style={{ animationDuration: '2.5s' }}></div>
+              <div className="absolute inset-8 border border-[#FFB800] rounded-full animate-ping opacity-10" style={{ animationDuration: '3s' }}></div>
+              <div className="w-16 h-16 bg-[#00F5FF]/10 border-2 border-[#00F5FF] rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,245,255,0.6)]">
+                <Compass className="w-8 h-8 text-[#00F5FF] animate-spin" style={{ animationDuration: '4s' }} />
               </div>
             </div>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-semibold text-amber-400 shadow-lg">
-              Searching for near drivers...
+            <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 text-center">
+              <div className="text-[#00F5FF] font-mono text-[10px] uppercase tracking-widest mb-1 animate-pulse">Scanning Grid Subsections...</div>
+              <div className="text-white font-black text-xl tracking-tighter">LOCATING INTERCEPTOR</div>
             </div>
           </div>
         )}
@@ -329,134 +308,64 @@ export default function App() {
   };
 
   return (
-    <div id="vuu-root" className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      
+    <div id="vuu-root" className="min-h-screen bg-gradient-to-br from-[#060814] to-[#0D1126] text-white flex flex-col font-sans relative overflow-hidden">
+      {/* Sci-Fi Telemetry Background Grid */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(0, 245, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 245, 255, 0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+      <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#00F5FF]/5 via-transparent to-transparent opacity-50"></div>
+
       {/* HEADER BAR */}
-      <header className="border-b border-slate-900 bg-slate-900/40 backdrop-blur-md sticky top-0 z-50 py-3.5 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/10">
-              <Navigation className="w-6 h-6 text-slate-950" />
+      <header className="relative z-50 border-b border-white/10 bg-[#060814]/60 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-4 px-8">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded bg-[#FFB800] flex items-center justify-center shadow-[0_0_20px_rgba(255,184,0,0.4)] relative">
+              <div className="absolute inset-0 rounded border border-[#FFB800] animate-ping opacity-30"></div>
+              <Navigation className="w-6 h-6 text-[#060814]" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-3">
                 VUU Transport
-                <span className="text-[10px] font-mono tracking-wider uppercase font-bold text-amber-400 px-1.5 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/20">
-                  Mobile-First
+                <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-[#FFB800] px-2 py-1 rounded bg-[#FFB800]/10 border border-[#FFB800]/30 shadow-[inset_0_0_8px_rgba(255,184,0,0.2)]">
+                  Elite Hub
                 </span>
               </h1>
-              <p className="text-xs text-slate-400">Supabase & Zustand Clean Architecture</p>
+              <div className="text-[10px] text-[#00F5FF]/70 font-mono tracking-widest uppercase mt-0.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-[#00F5FF] rounded-full shadow-[0_0_5px_#00F5FF]"></span>
+                Secure Mobility Platform
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <LanguageSwitcher />
 
-            <div className="hidden md:flex items-center gap-6 text-xs text-slate-400">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Dev Server: Port 3000</span>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                <span className="text-[10px] font-medium text-slate-400 uppercase">Dev Mode Status</span>
-                {isDemoMode ? (
-                  <span className="text-amber-400 font-semibold uppercase tracking-wider text-[10px] bg-amber-400/5 px-2 py-0.5 rounded border border-amber-400/20">
-                    ⚠️ Demo Sandbox
+            <div className="hidden md:flex items-center gap-3">
+               <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-mono text-[#00F5FF]/60 uppercase tracking-widest mb-1">Network Status</span>
+                  <span className="text-xs font-bold text-[#00F5FF] flex items-center gap-2 px-3 py-1.5 rounded bg-[#00F5FF]/5 border border-[#00F5FF]/20 shadow-[0_0_15px_rgba(0,245,255,0.15)] bg-clip-padding backdrop-filter backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-[#00F5FF] animate-pulse shadow-[0_0_8px_#00F5FF]"></span>
+                    SYS.NOMINAL // UPLINK: OK
                   </span>
-                ) : (
-                  <span className="text-emerald-400 font-semibold uppercase tracking-wider text-[10px] bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/20">
-                    🔌 Live Supabase
-                  </span>
-                )}
-              </div>
+               </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* MAIN CONTAINER GRIDS */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start relative z-10">
         
-        {/* COLUMN 1: PROJECT DIRECTORY & TECHNICAL DOCUMENTATION SIDEBAR */}
-        <section className="lg:col-span-5 col-span-1 bg-slate-900/50 border border-slate-900 rounded-3xl p-6 shadow-xl flex flex-col gap-5 self-stretch">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-1.5">
-              <Layers className="w-5 h-5 text-amber-400" />
-              Scalable Project Structure
-            </h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Based on enterprise industry standards, this modular architecture guarantees extreme scaling, clean separation of concerns, and ease of unit testing.
-            </p>
-          </div>
-
-          {/* Directory File-Tree Visualizer */}
-          <div className="bg-slate-950 rounded-2xl border border-slate-900 p-4 font-mono text-xs text-slate-300">
-            <p className="text-slate-500 mb-2 border-b border-slate-900 pb-1.5 text-[10px] uppercase font-bold tracking-wider flex items-center justify-between">
-              <span>📂 File Directory Tree</span>
-              <span className="text-amber-400 text-[10px]">VUU Transport Root</span>
-            </p>
-            <div className="space-y-1.5 overflow-x-auto text-[11px]">
-              <div>📦 <span className="text-amber-400 font-bold">src</span>/</div>
-              <div className="pl-4">📁 <span className="text-white">components</span>/ <span className="text-slate-600 font-sans italic text-[10px]">(Reusable global UI buttons, forms)</span></div>
-              <div className="pl-4">📁 <span className="text-white">lib</span>/ <span className="text-slate-600 font-sans italic text-[10px]">(Third party clients initialize)</span></div>
-              <div className="pl-8 text-slate-400">⚡ <span className="text-amber-400">supabase.ts</span> <span className="text-amber-400/70 font-sans text-[10px]">[Generated ✅]</span></div>
-              <div className="pl-4">📁 <span className="text-white">store</span>/ <span className="text-slate-600 font-sans italic text-[10px]">(Global client-side stores)</span></div>
-              <div className="pl-8 text-slate-400">⚡ <span className="text-emerald-400">useAuthStore.ts</span> <span className="text-emerald-400/70 font-sans text-[10px]">[Generated ✅]</span></div>
-              <div className="pl-8 text-slate-500">⚡ <span className="text-slate-500">useRideStore.ts</span> <span className="text-slate-500/70 font-sans text-[10px]">[Simulation Helper ✅]</span></div>
-              <div className="pl-4">📁 <span className="text-white">types</span>/ <span className="text-slate-600 font-sans italic text-[10px]">(All strict interface contracts)</span></div>
-              <div className="pl-8 text-slate-400">⚡ <span className="text-slate-400">types.ts</span> <span className="text-slate-400/70 font-sans text-[10px]">[Generated ✅]</span></div>
-              <div className="pl-4">📁 <span className="text-white">views</span>/ <span className="text-slate-600 font-sans italic text-[10px]">(Feature specific layout view screens)</span></div>
-              <div className="pl-8 text-slate-500">📁 <span className="text-slate-500">rider</span>/ <span className="text-slate-500/70 font-sans text-[10px]">(Rider booking workflow)</span></div>
-              <div className="pl-8 text-slate-500">📁 <span className="text-slate-500">driver</span>/ <span className="text-slate-500/70 font-sans text-[10px]">(Driver accept workflow)</span></div>
-              <div className="pl-4">⚡ <span className="text-pink-400">App.tsx</span> <span className="text-pink-400/70 font-sans text-[10px]">[Entry-point Dashboard ✅]</span></div>
-              <div className="pl-4">⚡ <span className="text-white">main.tsx</span></div>
-              <div className="pl-4">🎨 <span className="text-white">index.css</span></div>
-            </div>
-          </div>
-
-          {/* Quick Technical Summary Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-900">
-              <span className="text-xs text-slate-400 block mb-1">State Handler</span>
-              <p className="text-sm font-bold text-white hover:text-amber-400 transition-colors">Zustand store</p>
-              <span className="text-[10px] text-slate-500 block mt-1 leading-tight">Lightweight, fast react state engine inside useAuthStore.ts</span>
-            </div>
-            <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-900">
-              <span className="text-xs text-slate-400 block mb-1">Database Client</span>
-              <p className="text-sm font-bold text-white hover:text-amber-400 transition-colors">Supabase client</p>
-              <span className="text-[10px] text-slate-500 block mt-1 leading-tight">PostgreSQL engine with full real-time listeners inside supabase.ts</span>
-            </div>
-          </div>
-
-          {/* Sandbox warning if missing Supabase variables */}
-          {isDemoMode && (
-            <div className="bg-amber-400/5 hover:bg-amber-400/10 transition-colors border border-amber-400/20 rounded-2xl p-4.5 text-xs text-slate-300 flex flex-col gap-2.5">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                <span className="font-bold text-amber-400">Interactive Demo Mode Active</span>
-              </div>
-              <p className="leading-relaxed">
-                We've built in a complete <strong>simulation fallback layer</strong>. Any actions you perform on the phone simulator directly mutate a mock Supabase engine storing records safely in the client's <strong>localStorage</strong>.
-              </p>
-              <div className="bg-slate-950/80 p-2.5 rounded-lg font-mono text-[10px] text-slate-400 flex flex-col gap-1 select-all border border-slate-900">
-                <span># Setup secrets for live API</span>
-                <span>VITE_SUPABASE_URL="https://..."</span>
-                <span>VITE_SUPABASE_ANON_KEY="..."</span>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* COLUMN 2: INTERACTIVE MOBILE SMARTPHONE PREVIEW PHONE FRAME */}
-        <section className="lg:col-span-7 col-span-1 flex flex-col items-center">
+        {/* LEFT COLUMN: INTERACTIVE APP CONTAINER (Consumer App View) */}
+        <section className="lg:col-span-4 col-span-1 flex flex-col items-center">
           
           {/* Smartphone Hardware Frame Wrapper */}
-          <div className="w-full max-w-[420px] bg-[#0c101d] rounded-[48px] p-4.5 border-4 border-slate-900/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] relative">
+          <div className="w-full max-w-[420px] bg-[#0c101d]/60 backdrop-blur-2xl rounded-[48px] p-4.5 border border-white/10 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.8),_inset_0_0_20px_rgba(255,255,255,0.05)] relative before:absolute before:inset-0 before:rounded-[48px] before:border before:border-white/5 before:pointer-events-none">
             
-            {/* Top Ear Speaker Notch */}
-            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2.5xl flex items-center justify-around z-50">
-              <div className="w-12 h-1 bg-slate-800 rounded-full"></div>
-              <div className="w-3.5 h-3.5 bg-[#0a001a] rounded-full border-2 border-slate-800/50"></div>
+            {/* High-Tech Notch */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-6 bg-[#060814] border-x border-b border-[#00F5FF]/30 rounded-b-xl flex items-center justify-center gap-4 z-50 shadow-[0_5px_15px_rgba(0,245,255,0.1)]">
+              <div className="w-16 h-0.5 bg-[#00F5FF]/40 rounded-full shadow-[0_0_5px_#00F5FF]"></div>
+              <div className="w-2.5 h-2.5 rounded-full border border-[#00F5FF]/50 flex items-center justify-center">
+                 <div className="w-1 h-1 bg-[#00F5FF] rounded-full shadow-[0_0_8px_#00F5FF]"></div>
+              </div>
             </div>
 
             {/* Simulated Phone Screen Canvas */}
@@ -486,51 +395,21 @@ export default function App() {
                     
                     {/* App Logo */}
                     <div className="flex flex-col items-center text-center mb-8">
-                      <div className="w-14 h-14 rounded-2xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/20 mb-3 animate-pulse">
-                        <Navigation className="w-8 h-8 text-slate-900" />
+                      <div className="relative group">
+                         <div className="absolute inset-0 bg-[#FFB800] blur-xl opacity-30 group-hover:opacity-50 transition-opacity rounded-full"></div>
+                         <div className="w-16 h-16 rounded-[20px] bg-gradient-to-tr from-[#FFB800]/20 to-transparent border border-[#FFB800] flex items-center justify-center shadow-[inset_0_0_15px_rgba(255,184,0,0.5)] mb-4 relative z-10">
+                           <Navigation className="w-8 h-8 text-[#FFB800]" />
+                         </div>
                       </div>
-                      <h2 className="text-2xl font-black text-white tracking-tight">VUU Transport</h2>
-                      <p className="text-xs text-slate-400 mt-1 max-w-[240px] mx-auto">
-                        Your mobile-first ride-hailing alternative powered by real state.
+                      <h2 className="text-2xl font-black text-white tracking-tighter">VUU Transport</h2>
+                      <p className="text-[10px] text-[#00F5FF]/70 font-mono tracking-widest uppercase mt-1">
+                        Secure Mobility Interface
                       </p>
-                    </div>
-
-                    {/* Developer Presets Toggle (Extremely useful to avoid manually inputting accounts!) */}
-                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4.5 mb-6 text-center">
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-3 flex items-center justify-center gap-1">
-                        <Smartphone className="w-3.5 h-3.5 text-emerald-400 font-extrabold" /> Developer Quick-Login Presets
-                      </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button 
-                          onClick={loginCustomerPreset}
-                          type="button"
-                          className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-2 py-2.5 rounded-xl font-bold text-[10.5px] transition-colors flex flex-col items-center gap-1 cursor-pointer"
-                        >
-                          <span className="text-[9px] opacity-80 uppercase tracking-widest font-mono">Customer</span>
-                          <span className="truncate w-full">Sarah C.</span>
-                        </button>
-                        <button 
-                          onClick={loginRiderPreset}
-                          type="button"
-                          className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 px-2 py-2.5 rounded-xl font-bold text-[10.5px] transition-colors flex flex-col items-center gap-1 cursor-pointer"
-                        >
-                          <span className="text-[9px] opacity-80 uppercase tracking-widest font-mono">Rider</span>
-                          <span className="truncate w-full">Benjamin R.</span>
-                        </button>
-                        <button 
-                          onClick={loginDriverPreset}
-                          type="button"
-                          className="bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/20 px-2 py-2.5 rounded-xl font-bold text-[10.5px] transition-colors flex flex-col items-center gap-1 cursor-pointer"
-                        >
-                          <span className="text-[9px] opacity-80 uppercase tracking-widest font-mono">Driver</span>
-                          <span className="truncate w-full">Alex D.</span>
-                        </button>
-                      </div>
                     </div>
 
                     {/* Auth Error Toast */}
                     {error && (
-                      <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-400 mb-5 text-[11px] leading-relaxed flex items-start gap-2">
+                      <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-400 mb-5 text-[11px] leading-relaxed flex items-start gap-2 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                         <div>
                           <strong className="block font-bold mb-0.5">Authentication Error</strong>
@@ -540,96 +419,96 @@ export default function App() {
                     )}
 
                     {/* Custom Form */}
-                    <form onSubmit={handleAuthSubmit} className="space-y-4">
+                    <form onSubmit={handleAuthSubmit} className="space-y-5">
                       {isRegistering && (
                         <>
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">Full Name</label>
+                          <div className="relative group">
                             <input 
                               type="text" 
                               required 
                               value={authName} 
                               onChange={e => setAuthName(e.target.value)}
-                              placeholder="e.g. Jean Dupont" 
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+                              placeholder=" " 
+                              className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
                             />
+                            <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
+                              Full Name
+                            </label>
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
                           </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">Phone Number</label>
+                          
+                          <div className="relative group">
                             <input 
                               type="tel" 
                               required 
                               value={authPhone} 
                               onChange={e => setAuthPhone(e.target.value)}
-                              placeholder="e.g. +33 6 12 34 56 78" 
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+                              placeholder=" " 
+                              className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
                             />
+                            <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
+                              Secure Comm Link (Phone)
+                            </label>
+                            <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
                           </div>
+                          
                           <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">Enroll as Role</label>
-                            <div className="grid grid-cols-4 gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setAuthRole('customer')}
-                                className={`py-1.5 text-[10px] font-bold rounded-lg border transition-colors ${authRole === 'customer' ? 'bg-emerald-600/25 border-emerald-500 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
-                              >
-                                Customer
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setAuthRole('rider')}
-                                className={`py-1.5 text-[10px] font-bold rounded-lg border transition-colors ${authRole === 'rider' ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
-                              >
-                                Rider
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setAuthRole('driver')}
-                                className={`py-1.5 text-[10px] font-bold rounded-lg border transition-colors ${authRole === 'driver' ? 'bg-amber-400/20 border-amber-500 text-amber-400' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
-                              >
-                                Driver
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setAuthRole('admin')}
-                                className={`py-1.5 text-[10px] font-bold rounded-lg border transition-colors ${authRole === 'admin' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'}`}
-                              >
-                                Admin
-                              </button>
+                            <label className="block text-[9px] text-[#00F5FF]/70 uppercase tracking-widest mb-3 font-mono">Select Access Node</label>
+                            <div className="grid grid-cols-4 gap-2">
+                              {['customer', 'rider', 'driver', 'admin'].map((role) => (
+                                <button
+                                  key={role}
+                                  type="button"
+                                  onClick={() => setAuthRole(role as UserRole)}
+                                  className={`py-2 text-[9px] uppercase font-mono font-bold rounded-lg border transition-all ${
+                                    authRole === role 
+                                      ? 'bg-[#FFB800]/20 border-[#FFB800] text-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.3)]' 
+                                      : 'bg-transparent border-white/10 text-white/50 hover:border-white/30'
+                                  }`}
+                                >
+                                  {role}
+                                </button>
+                              ))}
                             </div>
                           </div>
                         </>
                       )}
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">Email Address</label>
+                      <div className="relative group">
                         <input 
                           type="email" 
                           required 
                           value={authEmail} 
                           onChange={e => setAuthEmail(e.target.value)}
-                          placeholder="rider@vuu.com" 
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+                          placeholder=" " 
+                          className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
                         />
+                        <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
+                          Identity Alias (Email)
+                        </label>
+                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 font-mono">Password</label>
+                      <div className="relative group">
                         <input 
                           type="password" 
                           required 
                           value={authPassword} 
                           onChange={e => setAuthPassword(e.target.value)}
-                          placeholder="••••••••" 
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition-colors"
+                          placeholder=" " 
+                          className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
                         />
+                        <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
+                          Security Key (Password)
+                        </label>
+                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
                       </div>
 
                       <button 
                         type="submit" 
-                        className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs py-3 rounded-xl transition-colors shadow-lg shadow-amber-400/10 flex items-center justify-center gap-1.5"
+                        className="w-full bg-[#FFB800] hover:bg-[#FFB800]/90 text-black font-black uppercase tracking-widest text-[11px] py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(255,184,0,0.4)] flex items-center justify-center gap-2 mt-4"
                       >
-                        {isRegistering ? 'Complete Registration' : 'Secure Login'}
+                        {isRegistering ? 'Initialize Identity' : 'Establish Link'}
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </form>
@@ -749,9 +628,6 @@ export default function App() {
                       {profile?.role === 'rider' && (
                         <div className="flex-1 flex flex-col gap-4">
                           
-                          {/* Live Interactive Map Pin Visualizer */}
-                          {renderMockMap()}
-
                           {/* Render booking controls based on active booking state */}
                           {!activeRide && !isSearching ? (
                             <div className="space-y-4 flex-1">
@@ -1050,9 +926,6 @@ export default function App() {
                             </button>
                           </div>
 
-                          {/* Rider Match SVG map visualization */}
-                          {renderMockMap()}
-
                           {/* Driver Queue list / Ongoing Ride controller */}
                           {activeRide ? (
                             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4.5 space-y-4">
@@ -1257,6 +1130,74 @@ export default function App() {
           <span className="text-[10px] font-mono text-slate-600 mt-4 uppercase tracking-widest block">
             Powered by Google AI Studio
           </span>
+
+        </section>
+
+        {/* RIGHT COLUMN: IMMERSIVE LIVE HUD */}
+        <section className="lg:col-span-8 col-span-1 hidden lg:flex flex-col h-full min-h-[800px] relative rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,245,255,0.05)]">
+          {/* Neon Border Glow */}
+          <div className="absolute inset-0 rounded-3xl border border-[#00F5FF]/10 shadow-[inset_0_0_60px_rgba(0,245,255,0.05)] pointer-events-none z-20"></div>
+
+          {/* Map Layer (We use the mock map here, but stretched) */}
+          <div className="absolute inset-0 bg-[#060814] z-0 overflow-hidden flex items-center justify-center">
+            {renderMockMap()}
+          </div>
+
+          {/* Floating Ride Status HUD Overlay */}
+          <div className="absolute top-8 left-8 z-30 w-80">
+            <div className="bg-[#060814]/80 backdrop-blur-2xl border border-white/10 p-5 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] before:absolute before:inset-0 before:border before:border-[#FFB800]/20 before:rounded-2xl before:pointer-events-none overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFB800]/5 rounded-full blur-3xl"></div>
+              
+              <h3 className="text-[10px] font-mono text-[#00F5FF] uppercase tracking-widest mb-1">Status HUD</h3>
+              <p className="text-xl font-bold text-white tracking-tight mb-4">VUU Network</p>
+
+              <div className="space-y-3">
+                <div className="bg-[#00F5FF]/5 border border-[#00F5FF]/20 rounded-xl p-3 flex justify-between items-center relative overflow-hidden group">
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#00F5FF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <div className="flex flex-col relative z-10 w-full">
+                     <div className="flex justify-between items-center w-full mb-1">
+                        <span className="text-xs text-white font-black uppercase tracking-wider block">VUU Premium</span>
+                        <span className="text-sm font-bold text-[#00F5FF]">$34.00</span>
+                     </div>
+                     <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1">
+                           <Shield className="w-3 h-3 text-[#00F5FF]/70" />
+                           <span className="text-[9px] text-[#00F5FF]/70 font-mono">Luxury Fleet</span>
+                        </div>
+                        <span className="text-[10px] text-white/50 font-mono">ETA: 3 MIN</span>
+                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#FFB800]/5 border border-[#FFB800]/20 rounded-xl p-3 flex justify-between items-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#FFB800]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <div className="flex flex-col relative z-10 w-full">
+                     <div className="flex justify-between items-center w-full mb-1">
+                        <span className="text-xs text-white font-black uppercase tracking-wider block">VUU Standard</span>
+                        <span className="text-sm font-bold text-[#FFB800]">$14.50</span>
+                     </div>
+                     <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1">
+                           <Car className="w-3 h-3 text-[#FFB800]/70" />
+                           <span className="text-[9px] text-[#FFB800]/70 font-mono">56 Drivers</span>
+                        </div>
+                        <span className="text-[10px] text-white/50 font-mono">ETA: 1 MIN</span>
+                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lower HUD Overlay */}
+          <div className="absolute bottom-8 right-8 z-30 flex items-end gap-4">
+             <div className="bg-[#060814]/80 backdrop-blur-xl border border-[#00F5FF]/20 px-4 py-2 rounded-lg font-mono text-[10px] text-[#00F5FF] uppercase tracking-widest shadow-[0_0_15px_rgba(0,245,255,0.1)]">
+               GPS Precision: 99.98%
+             </div>
+             <div className="bg-[#060814]/80 backdrop-blur-xl border border-[#FFB800]/20 px-4 py-2 rounded-lg font-mono text-[10px] text-[#FFB800] uppercase tracking-widest shadow-[0_0_15px_rgba(255,184,0,0.1)]">
+               SAT-LINK: SECURE
+             </div>
+          </div>
 
         </section>
 
