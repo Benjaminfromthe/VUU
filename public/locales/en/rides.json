@@ -1,0 +1,10 @@
+{
+  "request_ride": "Request Ride",
+  "active_ride": "Active Ride / Commute",
+  "commute_started": "Commute has started",
+  "settle_fare": "Settle ticket fare",
+  "trip_completed": "Trip completed! Please settle your fare below:",
+  "fare_conversion": "Fixed rate dynamic conversion:",
+  "momo_push": "Request MoMo Push",
+  "awaiting_pin": "Awaiting PIN..."
+}

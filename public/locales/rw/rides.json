@@ -1,0 +1,10 @@
+{
+  "request_ride": "Saba Urugendo",
+  "active_ride": "Urugendo ruri gukorwa",
+  "commute_started": "Urugendo rwatangiye",
+  "settle_fare": "Yura igiciro cy'urugendo",
+  "trip_completed": "Urugendo rwasojwe! Nyabuneka wishyura igiciro cyarwo hepfo:",
+  "fare_conversion": "Guhindura igiciro ku gipimo gihamye:",
+  "momo_push": "Saba MoMo Push",
+  "awaiting_pin": "Tegereje umubare w'ibanga..."
+}

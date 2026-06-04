@@ -1,0 +1,10 @@
+{
+  "request_ride": "Demander une Course",
+  "active_ride": "Course Active / Trajet",
+  "commute_started": "Le trajet a commencé",
+  "settle_fare": "Régler le prix du ticket",
+  "trip_completed": "Voyage terminé! Veuillez régler votre tarif ci-dessous:",
+  "fare_conversion": "Conversion dynamique à taux fixe:",
+  "momo_push": "Demander MoMo Push",
+  "awaiting_pin": "En attente du PIN..."
+}

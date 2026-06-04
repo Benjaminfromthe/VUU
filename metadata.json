@@ -1,0 +1,6 @@
+{
+  "name": "VUU Transport",
+  "description": "Mobile-first ride-hailing application built with React, Supabase, and Zustand",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
