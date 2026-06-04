@@ -101,6 +101,25 @@ export default function App() {
   const [useLiveGpsMap, setUseLiveGpsMap] = useState(true);
   const [disputingRide, setDisputingRide] = useState<any | null>(null);
 
+  // Telemetry Simulation States
+  const [driversOnline, setDriversOnline] = useState(56);
+  const [pingMs, setPingMs] = useState(14);
+  const [gpsPrecision, setGpsPrecision] = useState(99.98);
+
+  useEffect(() => {
+    // Simulated Telemetry Loop
+    const telemetryInterval = setInterval(() => {
+      // Fluctuate drivers between 52 and 58
+      setDriversOnline(Math.floor(Math.random() * (58 - 52 + 1) + 52));
+      // Ping between 10ms and 25ms
+      setPingMs(Math.floor(Math.random() * (25 - 10 + 1) + 10));
+      // GPS precision jitter
+      setGpsPrecision(+(99.90 + Math.random() * 0.09).toFixed(2));
+    }, 4000); // jitter every 4 seconds
+
+    return () => clearInterval(telemetryInterval);
+  }, []);
+
   // Initialize Auth listeners
   useEffect(() => {
     const rawSupabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -219,6 +238,20 @@ export default function App() {
           <path d="M 300 0 V 800" stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
           <path d="M 700 0 V 800" stroke="#FFB800" strokeWidth="1" strokeDasharray="10 10" fill="none" className="opacity-50" />
           <path d="M 0 600 Q 400 700 1200 400" stroke="#00F5FF" strokeWidth="4" fill="none" style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.5))' }} />
+
+          {/* Ambient Radar Blips (Idle Drivers) */}
+          <circle cx="20%" cy="30%" r="2" fill="#FFB800">
+            <animate attributeName="r" values="2; 15; 2" dur="3s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1; 0; 0" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="80%" cy="60%" r="2" fill="#FFB800">
+            <animate attributeName="r" values="2; 20; 2" dur="4s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1; 0; 0" dur="4s" repeatCount="indefinite" />
+          </circle>
+          <circle cx="60%" cy="80%" r="2" fill="#FFB800">
+            <animate attributeName="r" values="2; 10; 2" dur="2.5s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="1; 0; 0" dur="2.5s" repeatCount="indefinite" />
+          </circle>
         </svg>
 
         {/* Dynamic Route Line */}
@@ -340,10 +373,10 @@ export default function App() {
 
             <div className="hidden md:flex items-center gap-3">
                <div className="flex flex-col items-end">
-                  <span className="text-[9px] font-mono text-[#00F5FF]/60 uppercase tracking-widest mb-1">Network Status</span>
+                  <span className="text-[9px] font-mono text-[#00F5FF]/60 uppercase tracking-widest mb-1">Live Feed</span>
                   <span className="text-xs font-bold text-[#00F5FF] flex items-center gap-2 px-3 py-1.5 rounded bg-[#00F5FF]/5 border border-[#00F5FF]/20 shadow-[0_0_15px_rgba(0,245,255,0.15)] bg-clip-padding backdrop-filter backdrop-blur-sm">
                     <span className="w-2 h-2 rounded-full bg-[#00F5FF] animate-pulse shadow-[0_0_8px_#00F5FF]"></span>
-                    SYS.NOMINAL // UPLINK: OK
+                    GPS LINK: EXCELLENT // {driversOnline} DRIVERS ONLINE
                   </span>
                </div>
             </div>
@@ -531,29 +564,30 @@ export default function App() {
                 <div className="flex-1 flex flex-col bg-[#070b16] overflow-y-auto">
                   
                   {/* APP SUB-HEADER HEADER WITH APP LOGO & PROFILE CARD */}
-                  <div className="p-4 bg-slate-950 border-b border-slate-900 flex justify-between items-center">
-                    <div className="flex items-center gap-2.5">
-                      <img 
-                        src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'} 
-                        alt="Profile avatar"
-                        referrerPolicy="no-referrer"
-                        className="w-9 h-9 rounded-full object-cover border border-slate-800"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-white leading-none">{profile?.full_name}</span>
-                          <span className={`text-[8px] font-mono font-black uppercase tracking-wider px-1 py-[1px] rounded ${profile?.role === 'driver' ? 'bg-amber-400 text-slate-950' : 'bg-blue-600 text-white'}`}>
-                            {profile?.role}
-                          </span>
+                  <div className="p-4 bg-[#060814]/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img 
+                          src={profile?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'} 
+                          alt="Profile avatar"
+                          referrerPolicy="no-referrer"
+                          className="w-8 h-8 rounded-full object-cover border border-[#00F5FF]/30 object-center"
+                        />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#00F5FF] rounded-full border-2 border-[#060814]"></div>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-[#00F5FF]/70 font-mono uppercase tracking-widest leading-none mb-1">Authenticated</span>
+                        <div className="flex items-center gap-1.5 leading-none">
+                          <span className="text-sm font-bold text-white tracking-tight">Welcome, {profile?.full_name?.split(' ')[0]}</span>
+                          <span className="text-[9px] font-mono uppercase tracking-wider text-[#FFB800]">({profile?.role})</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-1 leading-none">{profile?.email}</p>
                       </div>
                     </div>
 
                     <button 
                       onClick={signOut}
-                      className="w-8 h-8 rounded-lg bg-slate-900 hover:bg-rose-950/20 hover:text-rose-400 text-slate-400 transition-colors flex items-center justify-center border border-slate-800"
-                      title="Log Out"
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 text-white/50 transition-colors flex items-center justify-center border border-white/10"
+                      title="Terminate Link"
                     >
                       <LogOut className="w-4 h-4" />
                     </button>
@@ -697,67 +731,54 @@ export default function App() {
                                   </div>
 
                                   {/* Inputs */}
-                                  <div className="space-y-2">
-                                    <div className="bg-slate-900 rounded-xl px-3 py-2 border border-slate-800 flex items-center gap-2.5">
-                                      <MapPin className="w-4.5 h-4.5 text-blue-400 shrink-0" />
-                                      <div className="flex-1 min-w-0">
-                                        <span className="text-[8px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Pickup point</span>
-                                        <input 
-                                          type="text" 
-                                          value={pickupAddr} 
-                                          onChange={e => setPickupAddr(e.target.value)}
-                                          className="bg-transparent text-xs text-white w-full border-none p-0 focus:outline-none"
-                                        />
+                                  <div className="space-y-4">
+                                    <div className="relative group">
+                                      <div className="absolute inset-0 bg-[#00FF66]/5 rounded-xl blur-md opacity-50 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 group-focus-within:bg-[#00FF66]/20"></div>
+                                      <div className="relative bg-[#060814]/50 backdrop-blur-xl border border-[#00FF66]/30 group-focus-within:border-[#00FF66] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[inset_0_0_15px_rgba(0,255,102,0.05),0_0_10px_rgba(0,255,102,0.1)] group-focus-within:shadow-[inset_0_0_20px_rgba(0,255,102,0.2),0_0_20px_rgba(0,255,102,0.4)] transition-all duration-300">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-[#00FF66] shadow-[0_0_10px_#00FF66] group-focus-within:animate-ping group-focus-within:opacity-70"></div>
+                                        <div className="flex-1 min-w-0">
+                                          <span className="text-[9px] font-mono font-bold text-[#00FF66]/70 uppercase tracking-widest block mb-0.5">Pickup Location</span>
+                                          <input 
+                                            type="text" 
+                                            value={pickupAddr} 
+                                            onChange={e => setPickupAddr(e.target.value)}
+                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30"
+                                            placeholder="Current GPS Coordinates..."
+                                          />
+                                        </div>
                                       </div>
                                     </div>
 
-                                    <div className="bg-slate-900 rounded-xl px-3 py-2 border border-slate-800 flex items-center gap-2.5">
-                                      <Navigation className="w-4.5 h-4.5 text-amber-400 shrink-0" />
-                                      <div className="flex-1 min-w-0">
-                                        <span className="text-[8px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Going to</span>
-                                        <input 
-                                          type="text" 
-                                          value={destAddr} 
-                                          onChange={e => setDestAddr(e.target.value)}
-                                          placeholder="Where to?"
-                                          className="bg-transparent text-xs text-white w-full border-none p-0 focus:outline-none"
-                                        />
+                                    <div className="relative group">
+                                      <div className="absolute inset-0 bg-[#00F5FF]/5 rounded-xl blur-md opacity-50 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 group-focus-within:bg-[#00F5FF]/20 group-focus-within:animate-pulse"></div>
+                                      <div className="relative bg-[#060814]/50 backdrop-blur-xl border border-[#00F5FF]/30 group-focus-within:border-[#00F5FF] rounded-xl px-4 py-3 flex items-center gap-3 shadow-[inset_0_0_15px_rgba(0,245,255,0.05),0_0_10px_rgba(0,245,255,0.1)] group-focus-within:shadow-[inset_0_0_20px_rgba(0,245,255,0.3),0_0_25px_rgba(0,245,255,0.6)] transition-all duration-300">
+                                        <div className="relative w-2.5 h-2.5 flex items-center justify-center">
+                                           <div className="w-2 h-2 border-2 border-[#00F5FF] rounded-sm transform rotate-45 shadow-[0_0_8px_#00F5FF] group-focus-within:animate-spin"></div>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <span className="text-[9px] font-mono font-bold text-[#00F5FF]/70 uppercase tracking-widest block mb-0.5">Where to?</span>
+                                          <input 
+                                            type="text" 
+                                            value={destAddr} 
+                                            onChange={e => setDestAddr(e.target.value)}
+                                            placeholder="Enter destination..."
+                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30"
+                                          />
+                                        </div>
                                       </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Vehicle selectors */}
-                                  <div>
-                                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block mb-2 font-bold">Select Ride Tier</span>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {(Object.keys(pricing) as Array<keyof typeof pricing>).map((tier) => {
-                                        const t = pricing[tier];
-                                        const Icon = t.icon;
-                                        return (
-                                          <button
-                                            key={tier}
-                                            onClick={() => setSelectedRideType(tier)}
-                                            className={`p-3 rounded-xl text-left border flex flex-col gap-1 transition-all ${selectedRideType === tier ? 'bg-amber-400 border-amber-400 text-slate-950 shadow-md shadow-amber-400/10' : 'bg-slate-900 hover:bg-slate-900/80 border-slate-850 text-white'}`}
-                                          >
-                                            <div className="flex items-center justify-between w-full">
-                                              <Icon className="w-4 h-4" />
-                                              <span className="font-extrabold font-mono text-xs">${t.price.toFixed(2)}</span>
-                                            </div>
-                                            <span className="font-bold text-xs leading-none mt-1.5">{t.label}</span>
-                                            <span className={`text-[8.5px] leading-tight truncate ${selectedRideType === tier ? 'text-slate-800' : 'text-slate-400'}`}>{t.desc}</span>
-                                          </button>
-                                        );
-                                      })}
                                     </div>
                                   </div>
 
                                   {/* Request Button */}
                                   <button
                                     onClick={() => requestRide(pickupAddr, destAddr, selectedRideType, pricing[selectedRideType].price)}
-                                    className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs py-3 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-1.5"
+                                    className="w-full mt-6 bg-[#FFB800] text-black font-black uppercase tracking-widest hover:tracking-[0.25em] text-sm py-4 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(255,184,0,0.4)] hover:shadow-[0_0_45px_rgba(255,184,0,1)] flex items-center justify-center gap-2 group relative overflow-hidden"
                                   >
-                                    <Car className="w-4 h-4" />
-                                    Confirm Ride Booking • ${pricing[selectedRideType].price.toFixed(2)}
+                                    <div className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full -translate-x-[150%] skew-x-[-30deg] group-hover:animate-[sweep_1.5s_ease-in-out_infinite]"></div>
+                                    <span className="relative z-10 flex items-center gap-2">
+                                      REQUEST VUU RIDE
+                                      <ArrowRight className="w-5 h-5 ml-1 transition-transform group-hover:translate-x-1" />
+                                    </span>
                                   </button>
                                 </>
                               )}
@@ -1152,12 +1173,24 @@ export default function App() {
               <p className="text-xl font-bold text-white tracking-tight mb-4">VUU Network</p>
 
               <div className="space-y-3">
-                <div className="bg-[#00F5FF]/5 border border-[#00F5FF]/20 rounded-xl p-3 flex justify-between items-center relative overflow-hidden group">
-                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#00F5FF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div 
+                  onClick={() => setSelectedRideType('premium')}
+                  className={`border rounded-xl p-3 flex justify-between items-center relative overflow-hidden group cursor-pointer transition-all duration-300 ${
+                  selectedRideType === 'premium' 
+                    ? 'bg-[#00F5FF]/10 border-[#00F5FF] shadow-[inset_0_0_20px_rgba(0,245,255,0.2),0_0_15px_rgba(0,245,255,0.3)] opacity-100 scale-[1.02]' 
+                    : 'bg-[#00F5FF]/5 border-[#00F5FF]/20 hover:bg-[#00F5FF]/10 opacity-60 hover:opacity-80'
+                }`}>
                    <div className="flex flex-col relative z-10 w-full">
                      <div className="flex justify-between items-center w-full mb-1">
                         <span className="text-xs text-white font-black uppercase tracking-wider block">VUU Premium</span>
-                        <span className="text-sm font-bold text-[#00F5FF]">$34.00</span>
+                        <div className="flex items-center gap-2">
+                           <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border transition-colors ${
+                              selectedRideType === 'premium' ? 'bg-[#00F5FF] text-[#060814] border-[#00F5FF]' : 'text-[#00F5FF] border-[#00F5FF]/40 shadow-[0_0_8px_rgba(0,245,255,0.3)]'
+                           }`}>
+                             {selectedRideType === 'premium' ? '✓ Selected' : 'Select'}
+                           </span>
+                           <span className="text-sm font-bold text-[#00F5FF]">$34.00</span>
+                        </div>
                      </div>
                      <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-1">
@@ -1169,17 +1202,29 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-[#FFB800]/5 border border-[#FFB800]/20 rounded-xl p-3 flex justify-between items-center relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#FFB800]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div 
+                  onClick={() => setSelectedRideType('standard')}
+                  className={`border rounded-xl p-3 flex justify-between items-center relative overflow-hidden group cursor-pointer transition-all duration-300 ${
+                  selectedRideType === 'standard' 
+                    ? 'bg-[#FFB800]/10 border-[#FFB800] shadow-[inset_0_0_20px_rgba(255,184,0,0.2),0_0_15px_rgba(255,184,0,0.3)] opacity-100 scale-[1.02]' 
+                    : 'bg-[#FFB800]/5 border-[#FFB800]/20 hover:bg-[#FFB800]/10 opacity-60 hover:opacity-80'
+                }`}>
                    <div className="flex flex-col relative z-10 w-full">
                      <div className="flex justify-between items-center w-full mb-1">
                         <span className="text-xs text-white font-black uppercase tracking-wider block">VUU Standard</span>
-                        <span className="text-sm font-bold text-[#FFB800]">$14.50</span>
+                        <div className="flex items-center gap-2">
+                           <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border transition-colors ${
+                              selectedRideType === 'standard' ? 'bg-[#FFB800] text-[#060814] border-[#FFB800]' : 'text-[#FFB800] border-[#FFB800]/40 shadow-[0_0_8px_rgba(255,184,0,0.3)]'
+                           }`}>
+                             {selectedRideType === 'standard' ? '✓ Selected' : 'Select'}
+                           </span>
+                           <span className="text-sm font-bold text-[#FFB800]">$14.50</span>
+                        </div>
                      </div>
                      <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-1">
                            <Car className="w-3 h-3 text-[#FFB800]/70" />
-                           <span className="text-[9px] text-[#FFB800]/70 font-mono">56 Drivers</span>
+                           <span className="text-[9px] text-[#FFB800]/70 font-mono">{driversOnline} Drivers</span>
                         </div>
                         <span className="text-[10px] text-white/50 font-mono">ETA: 1 MIN</span>
                      </div>
@@ -1192,7 +1237,10 @@ export default function App() {
           {/* Lower HUD Overlay */}
           <div className="absolute bottom-8 right-8 z-30 flex items-end gap-4">
              <div className="bg-[#060814]/80 backdrop-blur-xl border border-[#00F5FF]/20 px-4 py-2 rounded-lg font-mono text-[10px] text-[#00F5FF] uppercase tracking-widest shadow-[0_0_15px_rgba(0,245,255,0.1)]">
-               GPS Precision: 99.98%
+               PING: {pingMs}ms
+             </div>
+             <div className="bg-[#060814]/80 backdrop-blur-xl border border-[#00F5FF]/20 px-4 py-2 rounded-lg font-mono text-[10px] text-[#00F5FF] uppercase tracking-widest shadow-[0_0_15px_rgba(0,245,255,0.1)] transition-all">
+               GPS Precision: {gpsPrecision}%
              </div>
              <div className="bg-[#060814]/80 backdrop-blur-xl border border-[#FFB800]/20 px-4 py-2 rounded-lg font-mono text-[10px] text-[#FFB800] uppercase tracking-widest shadow-[0_0_15px_rgba(255,184,0,0.1)]">
                SAT-LINK: SECURE
