@@ -22,7 +22,7 @@
 
     <main>
         <h1 class="section-title">Book Your Trip</h1>
-        <form action="confirmation.html" method="GET">
+        <form action="/api/book" method="POST">
             <div class="form-group">
                 <label for="name">Full Name</label>
                 <input type="text" id="name" name="name" required placeholder="John Doe">
@@ -60,6 +60,22 @@
                 <label for="date">Travel Date & Time</label>
                 <input type="datetime-local" id="date" name="date" required>
             </div>
+
+            <!-- Smart Price Prediction Widget -->
+            <div id="ai-price-prediction-widget" style="margin-bottom: 1.5rem; background: #f4f9f4; padding: 1.25rem; border-radius: 8px; border: 1px solid #c3e6cb; transition: all 0.3s ease; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-weight: bold; color: #155724; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                        🧠 Smart AI Price Predictor & Calendar
+                    </span>
+                    <span id="ai-price-prediction-status" style="font-size: 0.75rem; color: #155724; font-family: monospace; background: #e2f5e5; padding: 2px 8px; border-radius: 10px; font-weight: bold;">Analyzing...</span>
+                </div>
+                <div id="ai-price-prediction-forecast" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-bottom: 0.75rem; overflow-x: auto;">
+                    <!-- Populated dynamically via checkLivePrices script -->
+                </div>
+                <small style="color: #444; line-height: 1.4; display: block; background: rgba(255,255,255,0.6); padding: 8px; border-radius: 6px;" id="ai-price-prediction-narrative">
+                    Loading pricing forecast... Select route origin and destination to predict cheaper alternative travel days!
+                </small>
+            </div>
             <div class="form-group">
                 <label for="seats">Number of Seats</label>
                 <input type="number" id="seats" name="seats" value="1" min="1" max="10" required>
@@ -74,6 +90,27 @@
                 </select>
             </div>
 
+            <!-- Conditional MTN MoMo Phone Number Input -->
+            <div id="momo-phone-group" class="form-group" style="transition: all 0.3s ease; display: none; background: #fffcf0; padding: 1rem; border-radius: 6px; border: 1px solid #ffeeba; margin-bottom: 1.5rem;">
+                <label for="momo_phone" style="font-weight: bold; color: #856404; display: flex; align-items: center; gap: 4px;">
+                    💰 MTN MoMo Phone Number <span style="color:#dc3545;">*</span>
+                </label>
+                <input type="tel" id="momo_phone" name="momo_phone" placeholder="e.g. 0788000000" style="border: 1px solid #ffcc00; border-radius: 4px; padding: 0.6rem; width: 100%; box-sizing: border-box; background: white; color: #111;">
+                <small style="color: #666; margin-top: 6px; display: block; line-height: 1.4;">
+                    Enter an MTN Rwanda number (e.g., +250 78/79). Sandbox can trigger a real push or visual Handset Simulator depending on configurations.
+                </small>
+            </div>
+
+            <!-- Live Seat Indicator Feedback Box -->
+            <div id="seats-indicator-box" style="margin-bottom: 1.5rem; padding: 1.2rem; border-radius: 6px; display: none;">
+                <div id="seats-indicator-text" style="font-weight: bold; font-size: 0.95rem; line-height:1.4;"></div>
+                <div id="seats-suggestion-btn-container" style="margin-top: 0.8rem; display: none;">
+                    <button type="button" id="use-suggestion-btn" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto; min-height: auto; display: inline-block; border-radius: 4px; background: #28a745;">
+                        Switch to Suggested departure
+                    </button>
+                </div>
+            </div>
+
             <button type="submit" class="btn">Confirm Booking</button>
         </form>
     </main>
@@ -82,5 +119,667 @@
         <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
         <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const userStr = localStorage.getItem("vuu_user");
+            if (!userStr) {
+                alert("Please log in to book a ride.");
+                window.location.href = "login.html?required=true";
+                return;
+            }
+
+            // Default date setup to 2026-06-05T11:00 if not specified
+            const dateInput = document.getElementById('date');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = "2026-06-05T11:00";
+            }
+
+            // Pre-fill fields from URL if present (e.g., quick search)
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('from')) document.getElementById('from').value = params.get('from');
+            if (params.has('to')) document.getElementById('to').value = params.get('to');
+            if (params.has('date')) {
+                // Keep input field date setting simple
+                const rawDate = params.get('date');
+                if (rawDate) {
+                    try {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) {
+                            dateInput.value = d.toISOString().slice(0, 16);
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            // Real-time seat availability logic
+            const fromSelect = document.getElementById('from');
+            const toSelect = document.getElementById('to');
+            const seatsInput = document.getElementById('seats');
+            const submitBtn = document.querySelector('form button[type="submit"]');
+
+            let suggestedNextSlot = "";
+
+            async function checkLiveSeats() {
+                const fromVal = fromSelect.value;
+                const toVal = toSelect.value;
+                const dateVal = dateInput.value;
+                const seatsVal = parseInt(seatsInput.value || "1");
+
+                if (!fromVal || !toVal || !dateVal) return;
+
+                const indicatorBox = document.getElementById('seats-indicator-box');
+                const indicatorText = document.getElementById('seats-indicator-text');
+                const suggestionBtnContainer = document.getElementById('seats-suggestion-btn-container');
+
+                if (!indicatorBox || !indicatorText) return;
+
+                try {
+                    const res = await fetch(`/api/seats-availability?from=${encodeURIComponent(fromVal)}&to=${encodeURIComponent(toVal)}&date=${encodeURIComponent(dateVal)}`);
+                    const data = await res.json();
+
+                    if (data.status === 'success') {
+                        indicatorBox.style.display = 'block';
+                        suggestedNextSlot = data.nextAvailableSlot;
+
+                        if (data.left <= 0) {
+                            indicatorBox.style.backgroundColor = '#f8d7da';
+                            indicatorBox.style.color = '#721c24';
+                            indicatorBox.style.border = '1px solid #f5c6cb';
+                            
+                            let prettyNext = data.nextAvailableSlot;
+                            try {
+                                const parsedDate = new Date(data.nextAvailableSlot);
+                                if (!isNaN(parsedDate.getTime())) {
+                                    prettyNext = parsedDate.toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                }
+                            } catch (e) {}
+
+                            indicatorText.innerHTML = `⚠️ <strong>FULL — Next departure available</strong>: <span style="text-decoration:underline; font-weight:bold;">${prettyNext}</span>`;
+                            suggestionBtnContainer.style.display = 'block';
+                            if (submitBtn) {
+                                submitBtn.disabled = true;
+                                submitBtn.style.opacity = '0.5';
+                                submitBtn.innerText = "Bus Departure is Full";
+                            }
+                        } else if (data.left < seatsVal) {
+                            indicatorBox.style.backgroundColor = '#fff3cd';
+                            indicatorBox.style.color = '#856404';
+                            indicatorBox.style.border = '1px solid #ffeeba';
+                            indicatorText.innerHTML = `⚠️ Only <strong>${data.left} seats left</strong>. You requested ${seatsVal}.`;
+                            suggestionBtnContainer.style.display = 'none';
+                            if (submitBtn) {
+                                submitBtn.disabled = true;
+                                submitBtn.style.opacity = '0.5';
+                                submitBtn.innerText = "Not Enough Seats Left";
+                            }
+                        } else {
+                            indicatorBox.style.backgroundColor = '#d4edda';
+                            indicatorBox.style.color = '#155724';
+                            indicatorBox.style.border = '1px solid #c3e6cb';
+                            indicatorText.innerHTML = `✅ Great choice! <strong>${data.left} seats left</strong> for this departure.`;
+                            suggestionBtnContainer.style.display = 'none';
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.style.opacity = '1';
+                                submitBtn.innerText = "Confirm Booking";
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to check seats availability:", err);
+                }
+            }
+
+            async function checkLivePrices() {
+                const fromVal = fromSelect.value;
+                const toVal = toSelect.value;
+                const dateVal = dateInput.value;
+
+                if (!fromVal || !toVal || !dateVal) return;
+
+                const widgetBox = document.getElementById('ai-price-prediction-widget');
+                const forecastContainer = document.getElementById('ai-price-prediction-forecast');
+                const statusLabel = document.getElementById('ai-price-prediction-status');
+                const narrative = document.getElementById('ai-price-prediction-narrative');
+
+                if (!widgetBox || !forecastContainer || !statusLabel || !narrative) return;
+
+                widgetBox.style.display = 'block';
+                statusLabel.innerText = "Analyzing routes...";
+                statusLabel.style.backgroundColor = '#fff3cd';
+                statusLabel.style.color = '#856404';
+
+                try {
+                    const res = await fetch('/api/ai/predict-prices', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ from: fromVal, to: toVal, date: dateVal })
+                    });
+                    const data = await res.json();
+
+                    if (data.status === 'success' && data.forecast) {
+                        statusLabel.innerText = "Forecast Ready";
+                        statusLabel.style.backgroundColor = '#d4edda';
+                        statusLabel.style.color = '#155724';
+
+                        forecastContainer.innerHTML = "";
+                        let cheapestDay = null;
+                        let cheapestPrice = Infinity;
+
+                        data.forecast.forEach(item => {
+                            if (item.price < cheapestPrice) {
+                                cheapestPrice = item.price;
+                                cheapestDay = item;
+                            }
+                        });
+
+                        data.forecast.forEach(item => {
+                            const dateObj = new Date(item.date);
+                            const dayLetter = item.dayName.substring(0, 3);
+                            const isCheapestBadge = item.isCheapest || (item.price === cheapestPrice);
+
+                            const col = document.createElement('div');
+                            col.style.cssText = `
+                                border: 1px solid ${isCheapestBadge ? '#28a745' : '#ddd'};
+                                background: ${isCheapestBadge ? '#eafaf1' : '#fff'};
+                                padding: 8px 4px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: space-between;
+                                min-width: 42px;
+                            `;
+
+                            col.className = 'forecast-day-btn';
+                            col.title = `${item.dayName}: ${item.reason} - Click to switch travel date!`;
+                            
+                            col.innerHTML = `
+                                <div style="font-size: 0.72rem; text-transform: uppercase; color: #555; font-weight: bold; margin-bottom: 2px;">${dayLetter}</div>
+                                <div style="font-size: 0.65rem; color: #888; font-family: monospace; margin-bottom: 4px;">${dateObj.getDate()}</div>
+                                <div style="font-size: 0.8rem; font-weight: bold; color: ${isCheapestBadge ? '#25a043' : '#111'};">${item.price.toLocaleString()}</div>
+                                <div style="font-size: 0.55rem; font-weight: bold; text-transform: uppercase; margin-top: 4px; padding: 1px 3px; border-radius: 3px; background: ${item.demand === 'High' ? '#fcdede' : (item.demand === 'Medium' ? '#f0f3f5' : '#c3e6cb')}; color: ${item.demand === 'High' ? '#721c24' : (item.demand === 'Medium' ? '#333' : '#155724')};">${item.demand}</div>
+                            `;
+
+                            // When clicked, auto-fill travel date to this day!
+                            col.addEventListener('click', () => {
+                                // Keep the user's selected hour
+                                const userHourStr = dateVal.substring(10); // e.g. "T11:00"
+                                const updatedDate = item.date + userHourStr;
+                                dateInput.value = updatedDate;
+                                checkLiveSeats();
+                                checkLivePrices();
+                            });
+
+                            forecastContainer.appendChild(col);
+                        });
+
+                        const cheapestDayStr = cheapestDay ? `${cheapestDay.dayName} (${cheapestDay.date})` : 'another day';
+                        narrative.innerHTML = `🌟 <strong>AI Price Insights</strong>: Traveling on <strong>${cheapestDayStr}</strong> is cheapest at <strong>${cheapestPrice.toLocaleString()} RWF</strong> (${cheapestDay ? cheapestDay.reason : 'off-peak'}).<br><em>Click any day in the calendar grid above to instantly swap your ticket travel date!</em>`;
+                    }
+                } catch (err) {
+                    console.error("AI Price fetch failure:", err);
+                    statusLabel.innerText = "Standard Rate";
+                    statusLabel.style.backgroundColor = '#e2ebd5';
+                }
+            }
+
+            if (fromSelect) {
+                fromSelect.addEventListener('change', () => {
+                    checkLiveSeats();
+                    checkLivePrices();
+                });
+            }
+            if (toSelect) {
+                toSelect.addEventListener('change', () => {
+                    checkLiveSeats();
+                    checkLivePrices();
+                });
+            }
+            if (dateInput) {
+                dateInput.addEventListener('change', () => {
+                    checkLiveSeats();
+                    checkLivePrices();
+                });
+            }
+            if (seatsInput) {
+                seatsInput.addEventListener('input', () => {
+                    checkLiveSeats();
+                });
+            }
+
+            const useSuggestionBtn = document.getElementById('use-suggestion-btn');
+            if (useSuggestionBtn) {
+                useSuggestionBtn.addEventListener('click', () => {
+                    if (suggestedNextSlot && dateInput) {
+                        try {
+                            const d = new Date(suggestedNextSlot);
+                            if (!isNaN(d.getTime())) {
+                                dateInput.value = d.toISOString().slice(0, 16);
+                                checkLiveSeats();
+                                checkLivePrices();
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                });
+            }
+
+            // Trigger on initial loads
+            setTimeout(() => {
+                checkLiveSeats();
+                checkLivePrices();
+            }, 100);
+
+            // Handle direct server redirect full bus parameters
+            if (params.get('error') === 'full') {
+                const nextS = params.get('nextSlot');
+                
+                const form = document.querySelector('form');
+                if (form) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.style.cssText = "background-color: #f8d7da; color: #721c24; padding: 1.2rem; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 2rem; font-weight: bold; line-height: 1.5; font-size:0.95rem;";
+                    
+                    let prettyNext = nextS || '';
+                    if (nextS) {
+                        try {
+                            const parsedD = new Date(nextS);
+                            prettyNext = parsedD.toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        } catch (e) {}
+                    }
+
+                    alertDiv.innerHTML = `
+                        <div style="font-size: 1.1rem; margin-bottom: 0.5rem; text-transform:uppercase; color:#dc3545;">🚫 Selected Bus Departure is FULL</div>
+                        Your requested departure is full. The next nearest departure with seat availability is <strong>${prettyNext}</strong>.<br>
+                        <button type="button" id="alert-book-next-btn" class="btn" style="margin-top: 1rem; width: auto; min-height: auto; padding: 0.5rem 1rem; background-color: #28a745; color: white; cursor: pointer; float:none; border-radius:4px;">
+                            Apply suggested departure time
+                        </button>
+                    `;
+                    form.parentNode.insertBefore(alertDiv, form);
+
+                    const btn = document.getElementById('alert-book-next-btn');
+                    if (btn && dateInput) {
+                        btn.addEventListener('click', () => {
+                            if (nextS) {
+                                try {
+                                    const d = new Date(nextS);
+                                    dateInput.value = d.toISOString().slice(0, 16);
+                                    alertDiv.remove();
+                                    checkLiveSeats();
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Toggle fields for Payment Method change
+            const paymentSelect = document.getElementById('payment');
+            const momoPhoneGroup = document.getElementById('momo-phone-group');
+            const momoPhoneInput = document.getElementById('momo_phone');
+
+            function togglePaymentFields() {
+                if (paymentSelect && paymentSelect.value === 'momo') {
+                    if (momoPhoneGroup) momoPhoneGroup.style.display = 'block';
+                    if (momoPhoneInput) momoPhoneInput.setAttribute('required', 'required');
+                } else {
+                    if (momoPhoneGroup) momoPhoneGroup.style.display = 'none';
+                    if (momoPhoneInput) momoPhoneInput.removeAttribute('required');
+                }
+            }
+
+            if (paymentSelect) {
+                paymentSelect.addEventListener('change', togglePaymentFields);
+                togglePaymentFields(); // Initial run on DOM load
+            }
+
+            // MTN Rwanda price index
+            const pricingMatrix = {
+                'musanze': 2500,
+                'huye': 2000,
+                'rubavu': 3000,
+                'nyagatare': 2500,
+                'rwamagana': 1000,
+                'muhanga': 1500
+            };
+
+            function evaluateAmount(toCity, seatsCount) {
+                const target = String(toCity || '').toLowerCase();
+                let basePrice = 2500;
+                if (target.includes("musanze")) basePrice = 2500;
+                else if (target.includes("huye")) basePrice = 2000;
+                else if (target.includes("rubavu")) basePrice = 3000;
+                else if (target.includes("nyagatare")) basePrice = 2500;
+                else if (target.includes("rwamagana")) basePrice = 1000;
+                else if (target.includes("muhanga")) basePrice = 1500;
+                return basePrice * Number(seatsCount || 1);
+            }
+
+            // Handle booking form submission
+            const bookingForm = document.querySelector('form');
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', async (e) => {
+                    const payMethod = paymentSelect ? paymentSelect.value : 'cash';
+                    if (payMethod !== 'momo') {
+                        // Standard form submit for airtel or cash
+                        return;
+                    }
+
+                    // Intercept only for MTN MoMo
+                    e.preventDefault();
+
+                    const nameVal = document.getElementById('name').value;
+                    const phoneVal = document.getElementById('phone').value;
+                    const fromVal = document.getElementById('from').value;
+                    const toVal = document.getElementById('to').value;
+                    const dateVal = document.getElementById('date').value;
+                    const seatsVal = Number(document.getElementById('seats').value || 1);
+                    const momoPhoneVal = momoPhoneInput ? momoPhoneInput.value : '';
+
+                    if (!momoPhoneVal) {
+                        alert("Please enter a valid MTN MoMo phone number.");
+                        return;
+                    }
+
+                    const computedAmount = evaluateAmount(toVal, seatsVal);
+
+                    // Show the Gateway Modal
+                    const modal = document.getElementById('momo-payment-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+
+                    document.getElementById('momo-modal-amount').innerText = computedAmount.toLocaleString() + ' RWF';
+                    document.getElementById('sim-request-amount').innerText = computedAmount.toLocaleString() + ' RWF';
+                    document.getElementById('momo-status-pill').innerText = 'PENDING PUSH...';
+                    document.getElementById('momo-status-pill').style.background = '#fff3cd';
+                    document.getElementById('momo-status-pill').style.color = '#856404';
+                    document.getElementById('momo-status-pill').style.borderColor = '#ffeeba';
+                    document.getElementById('momo-status-desc').innerText = 'Contacting the MTN Mobile Money server...';
+                    document.getElementById('momo-spinner').style.display = 'block';
+                    document.getElementById('momo-simulator-handset').style.display = 'none';
+
+                    let activeTxId = null;
+                    let pollInterval = null;
+
+                    try {
+                        const initiateRes = await fetch('/api/momo/initiate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: nameVal,
+                                phone: phoneVal,
+                                from: fromVal,
+                                to: toVal,
+                                date: dateVal,
+                                seats: seatsVal,
+                                amount: computedAmount,
+                                momoPhone: momoPhoneVal
+                            })
+                        });
+
+                        const initData = await initiateRes.json();
+                        if (initData.status === 'PENDING') {
+                            activeTxId = initData.txId;
+                            document.getElementById('momo-modal-ref').innerText = activeTxId.slice(0, 8).toUpperCase();
+                            
+                            // Adjust prompt messages
+                            document.getElementById('momo-status-pill').innerText = 'PUSH SENT ⏳';
+                            if (initData.useRealApi) {
+                                document.getElementById('momo-status-desc').innerText = `A real MTN MoMo push has been requested to MSISDN: ${momoPhoneVal}. Please check your phone keypad.`;
+                            } else {
+                                document.getElementById('momo-status-desc').innerText = `A dummy push request was sent. Please complete Sandbox approval inside the virtual simulator client below.`;
+                            }
+
+                            // Always mount Handset Simulator to ensure easy local validation in preview
+                            const simulatorHandset = document.getElementById('momo-simulator-handset');
+                            if (simulatorHandset) {
+                                simulatorHandset.style.display = 'block';
+                            }
+
+                            // Start Polling
+                            pollInterval = setInterval(async () => {
+                                if (!activeTxId) return;
+
+                                try {
+                                    const statusRes = await fetch(`/api/momo/status/${activeTxId}`);
+                                    const statusData = await statusRes.json();
+
+                                    if (statusData.status === 'SUCCESSFUL') {
+                                        clearInterval(pollInterval);
+                                        pollInterval = null;
+
+                                        document.getElementById('momo-status-pill').innerText = 'CONFIRMED ✅';
+                                        document.getElementById('momo-status-pill').style.background = '#d4edda';
+                                        document.getElementById('momo-status-pill').style.color = '#155724';
+                                        document.getElementById('momo-status-pill').style.borderColor = '#c3e6cb';
+                                        document.getElementById('momo-status-desc').innerText = 'Payment received! Your seating reservation is confirmed. Redirecting to receipt ticket...';
+                                        document.getElementById('momo-spinner').style.display = 'none';
+                                        document.getElementById('momo-simulator-handset').style.display = 'none';
+
+                                        // Redirect to receipt ticket confirmation
+                                        setTimeout(() => {
+                                            window.location.href = `/confirmation.html?ref=${encodeURIComponent(statusData.booking.ref_number)}&name=${encodeURIComponent(nameVal)}&phone=${encodeURIComponent(phoneVal)}&from=${encodeURIComponent(fromVal)}&to=${encodeURIComponent(toVal)}&date=${encodeURIComponent(dateVal)}&seats=${seatsVal}&payment=momo&price=${computedAmount}`;
+                                        }, 2000);
+
+                                    } else if (statusData.status === 'FAILED') {
+                                        clearInterval(pollInterval);
+                                        pollInterval = null;
+
+                                        document.getElementById('momo-status-pill').innerText = 'DECLINED ❌';
+                                        document.getElementById('momo-status-pill').style.background = '#f8d7da';
+                                        document.getElementById('momo-status-pill').style.color = '#721c24';
+                                        document.getElementById('momo-status-pill').style.borderColor = '#f5c6cb';
+                                        document.getElementById('momo-status-desc').innerText = 'The payment transaction was declined or timed out. Please enter a valid credential and try again.';
+                                        document.getElementById('momo-spinner').style.display = 'none';
+                                    }
+                                } catch (pollErr) {
+                                    console.error("Poller status error:", pollErr);
+                                }
+                            }, 1500);
+
+                            // Set up simulator handlers inside modal dynamically
+                            const approveBtn = document.getElementById('sim-approve-btn');
+                            const declineBtn = document.getElementById('sim-decline-btn');
+
+                            if (approveBtn) {
+                                approveBtn.onclick = async () => {
+                                    if (!activeTxId) return;
+                                    await fetch('/api/momo/simulate-action', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ txId: activeTxId, action: 'approve' })
+                                    });
+                                };
+                            }
+
+                            if (declineBtn) {
+                                declineBtn.onclick = async () => {
+                                    if (!activeTxId) return;
+                                    await fetch('/api/momo/simulate-action', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ txId: activeTxId, action: 'decline' })
+                                    });
+                                };
+                            }
+
+                        } else {
+                            alert("Booking simulation failed: " + (initData.message || "Unknown error"));
+                            if (modal) modal.style.display = 'none';
+                        }
+                    } catch (submitErr) {
+                        console.error("Payment registration submit error:", submitErr);
+                        alert("Connection failed while trying to contact MTN payment system.");
+                        if (modal) modal.style.display = 'none';
+                    }
+
+                    // Cancel modal handling
+                    const cancelBtn = document.getElementById('cancel-momo-btn');
+                    if (cancelBtn) {
+                        cancelBtn.onclick = () => {
+                            if (pollInterval) {
+                                clearInterval(pollInterval);
+                                pollInterval = null;
+                            }
+                            activeTxId = null;
+                            if (modal) modal.style.display = 'none';
+                        };
+                    }
+                });
+            }
+
+            // Sync user login status and render customized header
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    // Pre-fill user name and phone automatically if logged in
+                    if (user.name) document.getElementById('name').value = user.name;
+                    if (user.phone) document.getElementById('phone').value = user.phone;
+
+                    if (nav) {
+                        let navHTML = '<a href="routes.html">Routes</a>' +
+                                      '<a href="book.html" style="text-decoration:underline;">Book Ride</a>';
+                        
+                        if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    </script>
+
+    <!-- MTN MoMo Payment Gateway CSS Modal Overlays -->
+    <div id="momo-payment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; font-family: sans-serif; box-sizing: border-box; backdrop-filter: blur(4px);">
+        <div style="background: #ffffff; border-radius: 12px; width: 90%; max-width: 480px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeInUp 0.3s ease-out;">
+            <!-- Header -->
+            <div style="background: #ffcc00; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; position: relative;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <!-- Animated Yellow Pulse -->
+                    <span style="display: flex; position: relative; width: 20px; height: 20px;">
+                        <span style="animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; position: absolute; height: 100%; width: 100%; border-radius: 50%; background-color: #28a745; opacity: 0.75;"></span>
+                        <span style="position: relative; border-radius: 50%; width: 20px; height: 20px; background-color: #28a745; display: block;"></span>
+                    </span>
+                    <strong style="color: #111; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px;">MTN MoMo Sandbox Gateway</strong>
+                </div>
+                <button id="cancel-momo-btn" style="border: none; background: transparent; font-size: 1.5rem; cursor: pointer; color: #111; font-weight: bold; line-height: 1; padding: 4px;">&times;</button>
+            </div>
+
+            <div style="padding: 1.5rem;">
+                <!-- Real-Time Transaction Info Banner -->
+                <div style="background: #f7f9fa; border-left: 4px solid #ffcc00; padding: 0.75rem 1rem; border-radius: 0 4px 4px 0; margin-bottom: 1.25rem; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 2px;">
+                        <span>Service Operator:</span>
+                        <strong style="color: #111;">MTN Rwanda</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 2px;">
+                        <span>Beneficiary:</span>
+                        <strong style="color: #111;">VUU Transport Ltd</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-bottom: 2px;">
+                        <span>Reference ID:</span>
+                        <strong id="momo-modal-ref" style="color: #111; font-family: monospace;">TX-XXXX</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #555; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #ddd;">
+                        <span style="font-weight: bold;">Amount Due:</span>
+                        <strong id="momo-modal-amount" style="color: #dc3545; font-size: 1rem; font-weight: 700;">0 RWF</strong>
+                    </div>
+                </div>
+
+                <!-- Steps & Status Tracker -->
+                <div style="text-align: center; margin: 1.5rem 0;">
+                    <div id="momo-spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #ffcc00; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                    <div id="momo-status-pill" style="display: inline-block; background: #fff3cd; color: #856404; padding: 0.35rem 1rem; border-radius: 20px; font-weight: bold; font-size: 0.85rem; border: 1px solid #ffeeba; text-transform: uppercase;">
+                        PENDING PUSH...
+                    </div>
+                    <p id="momo-status-desc" style="color: #555; font-size: 0.9rem; font-family: sans-serif; line-height: 1.4; margin-top: 0.75rem; padding: 0 0.5rem; text-align: center;">
+                        Sending payment prompt notification to your device... Please keep your handset screen unlocked.
+                    </p>
+                </div>
+
+                <!-- Simulator Handset Widget -->
+                <div id="momo-simulator-handset" style="background: #1a1a1a; color: #ffffff; border-radius: 16px; padding: 1.25rem; font-family: 'Courier New', Courier, monospace; box-shadow: inset 0 2px 8px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5); border: 2px solid #555; margin-top: 1.5rem; text-align: left; display: none;">
+                    <div style="border-bottom: 1px solid #444; padding-bottom: 0.5rem; margin-bottom: 0.75rem; text-align: center; color: #ffe135; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">
+                        📲 HANDSET EMULATOR : SANDBOX TESTING
+                    </div>
+                    
+                    <div id="simulator-push-screen" style="background: #2b2b2b; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #444; min-height: 120px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="font-size: 0.85rem; line-height: 1.4; color: #eee;">
+                            <span style="color: #28a745; font-weight: bold;">[MTN MoMo Push]</span><br>
+                            VUU Transport is requesting payment of <strong style="color:#ffe135;" id="sim-request-amount">0 RWF</strong> for booking reservation.<br><br>
+                            <em>Please enter your 4-digit Sandbox MoMo PIN to authorize this transfer.</em>
+                        </div>
+                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
+                            <input type="password" id="sim-pin" value="1234" placeholder="PIN" maxlength="4" style="background: #ffffff; color: #000; border: none; padding: 0.4rem; border-radius: 4px; width: 80px; text-align: center; font-weight: bold; font-size: 1.1rem; font-family: monospace;">
+                            <div style="display: flex; gap: 0.4rem;">
+                                <button id="sim-decline-btn" style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">DECLINE</button>
+                                <button id="sim-approve-btn" style="background: #28a745; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">APPROVE</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 0.75rem; text-align: center; color: #777;">
+                        VUU Local Dev Environment active Sandbox Bypass.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes ping {
+        75%, 100% {
+            transform: scale(2);
+            opacity: 0;
+        }
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    </style>
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
 </body>
 </html>

@@ -81,11 +81,316 @@
                 </tbody>
             </table>
         </div>
+
+        <section style="margin-top: 3rem; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <h2 style="margin:0; color:#333; font-size:1.5rem; display:flex; align-items:center; gap:0.5rem;">
+                🗺️ Interactive Multi-City Route Map
+            </h2>
+            <p style="color:#666; margin-bottom: 1.5rem; font-size:0.95rem; margin-top:0.5rem;">
+                Explore all active direct VUU Transport routes between Kigali and major commercial hubs of Rwanda.
+            </p>
+            <div id="routes-map" style="width: 100%; height: 450px; border-radius: 8px; border: 1px solid #ddd; background: #eaecf0; position: relative; overflow: hidden;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #555; font-family: sans-serif;">
+                    Initializing interactive transit map...
+                </div>
+            </div>
+        </section>
+
+        <section style="margin-top: 3rem; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                <h2 style="margin:0; color:#333; font-size:1.5rem;">⏰ Real-Time Scheduled Departures & Seats Left</h2>
+                <span style="background:#28a745; color:white; padding:0.25rem 0.75rem; border-radius:20px; font-weight:bold; font-size:0.8rem; display:inline-flex; align-items:center; gap:0.3rem;">
+                    <span style="display:inline-block; width:8px; height:8px; background:white; border-radius:50%; animation: pulse-indicator 1.5s infinite;"></span> LIVE MONITORED
+                </span>
+            </div>
+            
+            <p style="color:#666; margin-bottom: 1.5rem; font-size:0.95rem;">
+                Select your preferred route from the upcoming scheduled departures below. Seats are tracked live under VUU transport regulations.
+            </p>
+
+            <style>
+                @keyframes pulse-indicator {
+                    0% { opacity: 0.3; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.3; }
+                }
+                .schedule-card {
+                    display: grid;
+                    grid-template-columns: 2fr 1.5fr 1.5fr 1.2fr;
+                    align-items: center;
+                    padding: 1rem 0;
+                    border-bottom: 1px solid #eee;
+                    gap: 1rem;
+                }
+                @media (max-width: 768px) {
+                    .schedule-card {
+                        grid-template-columns: 1fr;
+                        padding: 1.2rem;
+                        border: 1px solid #eee;
+                        border-radius: 8px;
+                        margin-bottom: 1rem;
+                    }
+                }
+            </style>
+
+            <div id="live-departures-container" style="background:#fff; border-radius: 6px;">
+                <p style="text-align:center; padding:2rem; color:#666;">Scanning database for live seating allocations...</p>
+            </div>
+        </section>
     </main>
 
     <footer>
         <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
         <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Live departure tracker
+            const container = document.getElementById("live-departures-container");
+
+            async function fetchLiveSchedule() {
+                if (!container) return;
+
+                try {
+                    const response = await fetch('/api/upcoming-departures');
+                    const data = await response.json();
+
+                    if (data.status === 'success' && data.departures) {
+                        container.innerHTML = "";
+                        
+                        // Header row for desktop view
+                        const header = document.createElement("div");
+                        header.className = "schedule-card";
+                        header.style.cssText = "font-weight: bold; background: #f8f9fa; border-top: 1px solid #ddd; border-bottom: 2px solid #ddd; display: grid; padding: 0.75rem 1rem;";
+                        header.innerHTML = `
+                            <div>Route & Specifications</div>
+                            <div>Fare & Departure</div>
+                            <div>Seat Status Indicator</div>
+                            <div style="text-align: right;">Action</div>
+                        `;
+                        container.appendChild(header);
+
+                        data.departures.forEach(dep => {
+                            const row = document.createElement("div");
+                            row.className = "schedule-card";
+                            row.style.cssText = "padding: 1rem; border-bottom: 1px solid #f0f0f0;";
+
+                            // Format pretty travel date
+                            let prettyDate = dep.time;
+                            const d = new Date(dep.time);
+                            if (!isNaN(d.getTime())) {
+                                prettyDate = d.toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }
+
+                            // Dynamic Seats Left Badge
+                            let seatsHTML = "";
+                            let actionHTML = "";
+                            
+                            if (dep.left <= 0) {
+                                // Full departure: suggest next hour departure slot (+3 or fallback)
+                                const hour = d.getHours();
+                                let nextDate = new Date(d.getTime() + 3*60*60*1000);
+                                if (hour >= 17) {
+                                    nextDate = new Date(d.getTime() + 15*60*60*1000); // tomorrow at 08:00
+                                }
+                                
+                                const prettyNext = nextDate.toLocaleString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+
+                                seatsHTML = `<span style="background-color: #f8d7da; color: #721c24; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: 1px solid #f5c6cb; inline-size: max-content;">FULL — Next departs: ${prettyNext}</span>`;
+                                actionHTML = `<a href="book.html?from=${encodeURIComponent(dep.from)}&to=${encodeURIComponent(dep.to)}&date=${encodeURIComponent(nextDate.toISOString().slice(0, 16))}" class="btn" style="background:#dc3545; font-size:0.85rem; padding:0.4rem 0.8rem; width:auto; min-height:auto; display:inline-block; border-radius:4px; text-decoration:none; color:white; text-align:center;">Book Next</a>`;
+                            } else {
+                                const greenState = dep.left > 10;
+                                const badgeColor = greenState ? '#d4edda' : '#fff3cd';
+                                const badgeTextColor = greenState ? '#155724' : '#856404';
+                                const badgeBorder = greenState ? '#c3e6cb' : '#ffeeba';
+
+                                seatsHTML = `<span style="background-color: ${badgeColor}; color: ${badgeTextColor}; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85rem; border: 1px solid ${badgeBorder}; inline-size: max-content;">${dep.left} seats left</span>`;
+                                actionHTML = `<a href="book.html?from=${encodeURIComponent(dep.from)}&to=${encodeURIComponent(dep.to)}&date=${encodeURIComponent(dep.time)}" class="btn" style="font-size:0.85rem; padding:0.4rem 0.8rem; width:auto; min-height:auto; display:inline-block; border-radius:4px; text-decoration:none; color:white; text-align:center;">Book Seat</a>`;
+                            }
+
+                            row.innerHTML = `
+                                <div>
+                                    <strong style="color:var(--secondary-color); font-size:1.1rem;">${dep.from} &rarr; ${dep.to}</strong>
+                                    <div style="font-size:0.85rem; color:#666; margin-top:2px;">Duration: ${dep.est} • Daily Service</div>
+                                </div>
+                                <div>
+                                    <div style="font-weight:bold; color:var(--primary-color);">${Number(dep.price).toLocaleString()} RWF</div>
+                                    <div style="font-size:0.85rem; font-weight:bold; color:#333; margin-top:2px;">Departing: ${prettyDate}</div>
+                                </div>
+                                <div style="display:flex; align-items:center;">
+                                    ${seatsHTML}
+                                </div>
+                                <div style="text-align: right;">
+                                    ${actionHTML}
+                                </div>
+                            `;
+                            container.appendChild(row);
+                        });
+                    } else {
+                        container.innerHTML = '<p style="text-align:center; padding:2rem; color:#888;">No upcoming scheduled services available at this moment.</p>';
+                    }
+                } catch (e) {
+                    console.error("Error fetching live schedule:", e);
+                    container.innerHTML = '<p style="text-align:center; padding:2rem; color:#dc3545;">Failed to load live schedules from system API. Please login and try again.</p>';
+                }
+            }
+
+            fetchLiveSchedule();
+
+            // Google Maps Route Initialization
+            const cities = {
+                "Kigali": { lat: -1.9441, lng: 30.0619 },
+                "Musanze": { lat: -1.5036, lng: 29.6350 },
+                "Huye": { lat: -2.5967, lng: 29.7403 },
+                "Rubavu": { lat: -1.7011, lng: 29.2612 },
+                "Nyagatare": { lat: -1.2989, lng: 30.3422 },
+                "Rwamagana": { lat: -1.9487, lng: 30.4347 },
+                "Muhanga": { lat: -2.0744, lng: 29.7567 }
+            };
+
+            const routeList = [
+                { from: "Kigali", to: "Musanze", color: "#e3120b" },
+                { from: "Kigali", to: "Huye", color: "#28a745" },
+                { from: "Kigali", to: "Rubavu", color: "#fd7e14" },
+                { from: "Kigali", to: "Nyagatare", color: "#6f42c1" },
+                { from: "Kigali", to: "Rwamagana", color: "#17a2b8" },
+                { from: "Kigali", to: "Muhanga", color: "#333333" }
+            ];
+
+            function renderMapsError() {
+                const mapDiv = document.getElementById("routes-map");
+                if (!mapDiv) return;
+                mapDiv.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 2rem; background: #fafafa; text-align: center; border: 1px dashed #ccc; border-radius: 8px; box-sizing: border-box;">
+                        <h3 style="color: #721c24; margin: 0 0 0.5rem 0; font-family: sans-serif; font-size: 1.1rem;">🗺️ Google Maps Display</h3>
+                        <p style="color: #666; max-width: 500px; font-size: 0.9rem; line-height: 1.5; margin: 0 0 1rem 0; font-family: sans-serif;">
+                            Please enter your Google Maps Platform key in AI Studio Secrets to enable fully interactive routes, vector maps, and tracking lines.
+                        </p>
+                        <div style="background: #ffffff; padding: 1rem; border-radius: 6px; border: 1px solid #ddd; text-align: left; font-size: 0.85rem; max-width: 480px; font-family: sans-serif; line-height: 1.4; color: #333;">
+                            <strong>To supply your API key:</strong><br>
+                            1. Obtain a Maps Key from Google Cloud Console.<br>
+                            2. Open <strong>Settings</strong> (⚙️ gear icon, top-right of AI Studio) &rarr; <strong>Secrets</strong>.<br>
+                            3. Set <code>GOOGLE_MAPS_PLATFORM_KEY</code>, press enter, and the app will redeploy.
+                        </div>
+                    </div>
+                `;
+            }
+
+            async function initMap() {
+                try {
+                    const res = await fetch("/api/maps-config");
+                    const config = await res.json();
+                    
+                    if (!config.apiKey || config.apiKey.startsWith("YOUR_") || config.apiKey === "") {
+                        renderMapsError();
+                        return;
+                    }
+                    
+                    window.initGoogleMapCallback = () => {
+                        const rwandaCenter = { lat: -1.9400, lng: 29.8700 };
+                        const map = new google.maps.Map(document.getElementById("routes-map"), {
+                            zoom: 9,
+                            center: rwandaCenter,
+                            mapTypeControl: false,
+                            streetViewControl: false,
+                            fullscreenControl: true
+                        });
+
+                        // Place pins and label each city
+                        Object.keys(cities).forEach(cityName => {
+                            const cityCoords = cities[cityName];
+                            
+                            new google.maps.Marker({
+                                position: cityCoords,
+                                map: map,
+                                title: cityName,
+                                label: {
+                                    text: cityName,
+                                    color: "#111",
+                                    fontWeight: "bold",
+                                    fontSize: "12px"
+                                }
+                            });
+                        });
+
+                        // Render connecting route lines
+                        routeList.forEach(route => {
+                            const startCoords = cities[route.from];
+                            const endCoords = cities[route.to];
+                            
+                            if (startCoords && endCoords) {
+                                new google.maps.Polyline({
+                                    path: [startCoords, endCoords],
+                                    geodesic: true,
+                                    strokeColor: route.color,
+                                    strokeOpacity: 0.85,
+                                    strokeWeight: 4,
+                                    map: map
+                                });
+                            }
+                        });
+                    };
+
+                    const script = document.createElement("script");
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${config.apiKey}&callback=initGoogleMapCallback`;
+                    script.async = true;
+                    script.onerror = renderMapsError;
+                    document.head.appendChild(script);
+
+                } catch (e) {
+                    console.error("Maps integration failed:", e);
+                    renderMapsError();
+                }
+            }
+
+            initMap();
+
+            // Sync user login status and render customized header
+            const userStr = localStorage.getItem("vuu_user");
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    if (nav) {
+                        let navHTML = '<a href="routes.html" style="text-decoration:underline;">Routes</a>' +
+                                      '<a href="book.html">Book Ride</a>';
+                        
+                        if (user.role === 'passenger') {
+                            navHTML += '<a href="passenger-dashboard.html">My Dashboard</a>';
+                        } else if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    </script>
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
 </body>
 </html>

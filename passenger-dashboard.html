@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Passenger Dashboard</title>
+    <meta name="description" content="Manage your booked rides and account on the VUU Transport passenger dashboard.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo" id="logo-text">VUU Transport</a>
+            <nav id="nav-links">
+                <a href="routes.html">Routes</a>
+                <a href="book.html">Book Ride</a>
+                <a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Welcome Alert Banner -->
+        <div id="alert-placeholder" style="margin-bottom: 1.5rem;"></div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+            <h1 class="section-title" id="passenger-welcome" style="margin:0; text-align:left;">Dashboard Overview</h1>
+            <span id="role-badge" style="background:var(--primary-color); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-weight:bold; font-size:0.8rem;">PASSENGER PORTAL</span>
+        </div>
+        
+        <div class="dashboard-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="stat-card" style="background-color: var(--secondary-color); color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <p style="text-transform: uppercase; font-size: 0.8rem; font-weight: bold; opacity: 0.9;">My Booked Trips</p>
+                <div class="stat-value" id="trips-display" style="font-size: 2rem; font-weight: bold; margin-top: 0.5rem;">0</div>
+            </div>
+            <div class="stat-card" style="background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--primary-color);">
+                <p style="text-transform: uppercase; font-size: 0.8rem; font-weight: bold; color: #666;">Total Tickets Value</p>
+                <div class="stat-value" id="spent-display" style="font-size: 2rem; font-weight: bold; color: var(--primary-color); margin-top: 0.5rem;">0 RWF</div>
+            </div>
+        </div>
+
+        <section style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom: 1.5rem; color: #333; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <span>My Travel Bookings</span>
+                <a href="book.html" class="btn" style="padding: 0.5rem 1rem; font-size: 0.9rem; min-height: auto; width: auto;">Book Another Ride</a>
+            </h2>
+            <ul class="trip-list" id="my-bookings-list" style="list-style: none; padding: 0;">
+                <!-- Loading indicator -->
+                <li class="trip-item" style="text-align:center; padding: 2rem; color:#666;">
+                    Scanning database for your bookings...
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Check for login query parameters
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("loggedIn") === "true") {
+                const user = {
+                    name: params.get("name"),
+                    email: params.get("email"),
+                    role: params.get("role"),
+                    phone: params.get("phone") || ""
+                };
+                localStorage.setItem("vuu_user", JSON.stringify(user));
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                const placeholder = document.getElementById('alert-placeholder');
+                if (placeholder) {
+                    placeholder.innerHTML = '<div style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; margin-bottom: 1.5rem;">Login Successful! Welcome back.</div>';
+                }
+            }
+
+            // Protect page
+            const userStr = localStorage.getItem("vuu_user");
+            if (!userStr) {
+                alert("Access Denied: Please log in as a Passenger first.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const currentUser = JSON.parse(userStr);
+            if (currentUser.role !== 'passenger' && currentUser.role !== 'admin') {
+                alert("Access Denied: Passenger dashboard only.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            // Custom welcome header
+            document.getElementById("passenger-welcome").innerText = `👋 Welcome, ${currentUser.name}!`;
+
+            // Setup logout btn
+            document.getElementById("logout-btn").addEventListener("click", (e) => {
+                e.preventDefault();
+                localStorage.removeItem("vuu_user");
+                window.location.href = "index.html";
+            });
+
+            // Fetch live bookings
+            async function fetchPassengerBookings() {
+                try {
+                    const response = await fetch('/api/bookings');
+                    const result = await response.json();
+                    
+                    if (result.status === 'success' && result.bookings) {
+                        // Filter bookings where passenger phone or passenger name matches
+                        const filtered = result.bookings.filter(b => {
+                            const matchPhone = b.phone && currentUser.phone && b.phone.replace(/[^0-9]/g, '').includes(currentUser.phone.replace(/[^0-9]/g, ''));
+                            const matchName = b.name && currentUser.name && b.name.toLowerCase().trim() === currentUser.name.toLowerCase().trim();
+                            const matchEmailOnPhone = b.phone && currentUser.phone && b.phone == currentUser.phone;
+                            return matchPhone || matchName || matchEmailOnPhone || b.name.toLowerCase().includes(currentUser.name.toLowerCase().split(' ')[0]);
+                        });
+
+                        renderBookings(filtered);
+                    } else {
+                        renderNoBookings();
+                    }
+                } catch (err) {
+                    console.error("Error fetching bookings:", err);
+                    renderNoBookings();
+                }
+            }
+
+            function renderBookings(bookings) {
+                const bookingsList = document.getElementById("my-bookings-list");
+                bookingsList.innerHTML = "";
+                
+                if (bookings.length === 0) {
+                    renderNoBookings();
+                    return;
+                }
+
+                let totalValue = 0;
+                let bookingsCount = bookings.length;
+
+                bookings.forEach(booking => {
+                    totalValue += Number(booking.amount || 0);
+
+                    // Format payment label
+                    let paymentLabel = 'Cash to Driver';
+                    if (booking.payment_method === 'momo') paymentLabel = 'MTN MoMo Paid';
+                    else if (booking.payment_method === 'airtel') paymentLabel = 'Airtel Money Paid';
+
+                    const li = document.createElement("li");
+                    li.className = `trip-item`;
+                    li.style.cssText = "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 1.5rem 0; flex-wrap: wrap; gap: 1rem;";
+                    
+                    let statusColor = '#ffc107'; // pending
+                    let statusLabel = booking.status;
+                    if (booking.status === 'completed') {
+                        statusColor = '#6c757d';
+                    } else if (booking.status === 'accepted') {
+                        statusColor = '#28a745';
+                    } else if (booking.status === 'declined') {
+                        statusColor = '#dc3545';
+                    } else if (booking.status === 'pending_payment') {
+                        statusColor = '#e0a800';
+                        statusLabel = 'pending payment';
+                    }
+
+                    // Format Date
+                    let dateStr = booking.travel_date;
+                    try {
+                        const parsedDate = new Date(booking.travel_date);
+                        if (!isNaN(parsedDate.getTime())) {
+                            dateStr = parsedDate.toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    } catch (e) {}
+
+                    li.innerHTML = `
+                        <div>
+                            <span style="font-size:0.75rem; background:#eaeaea; color:#333; padding:2px 6px; border-radius:3px; font-weight:bold;">#${booking.ref_number || 'VUU-0000'}</span>
+                            <h3 style="margin-top:0.3rem; color: var(--secondary-color);">${booking.from_location} &rarr; ${booking.to_location}</h3>
+                            <p style="color: #666; margin-top:0.25rem; font-size: 0.95rem;">${booking.seats} Seat${booking.seats > 1 ? 's' : ''} • ${paymentLabel} • RWF ${Number(booking.amount || 0).toLocaleString()}</p>
+                            <p style="font-size: 0.85rem; color: #888; font-weight:bold; margin-top:2px;">Travel Time: ${dateStr}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background:${statusColor}; color:white; padding:0.25rem 0.75rem; border-radius:20px; font-weight:bold; font-size:0.8rem; text-transform:uppercase;">
+                                ${statusLabel}
+                            </span>
+                        </div>
+                    `;
+                    bookingsList.appendChild(li);
+                });
+
+                document.getElementById("trips-display").innerText = bookingsCount;
+                document.getElementById("spent-display").innerText = totalValue.toLocaleString() + ' RWF';
+            }
+
+            function renderNoBookings() {
+                const bookingsList = document.getElementById("my-bookings-list");
+                bookingsList.innerHTML = `
+                    <li style="text-align:center; padding: 3rem 1rem;">
+                        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-ticket'><path d='M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z'/><path d='M13 5v2'/><path d='M13 17v2'/><path d='M13 11v2'/></svg>" style="margin-bottom: 1rem; opacity: 0.7;">
+                        <h3 style="color:#555; margin-bottom: 0.5rem;">No rides booked yet</h3>
+                        <p style="color:#888; margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                            You have not booked any trips. Ready to travel? Let's book your first comfortable ride across Rwanda!
+                        </p>
+                        <a href="book.html" class="btn" style="width:auto; display:inline-block;">Book Ride Now</a>
+                    </li>
+                `;
+            }
+
+            // Run on load
+            fetchPassengerBookings();
+        });
+    </script>
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
+</body>
+</html>

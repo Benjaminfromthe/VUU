@@ -90,5 +90,57 @@
         <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
         <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Check for login query parameters
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("loggedIn") === "true") {
+                const user = {
+                    name: params.get("name"),
+                    email: params.get("email"),
+                    role: params.get("role")
+                };
+                localStorage.setItem("vuu_user", JSON.stringify(user));
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // Sync user login status and render customized header
+            const userStr = localStorage.getItem("vuu_user");
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    if (nav) {
+                        let navHTML = '<a href="routes.html">Routes</a>' +
+                                      '<a href="book.html">Book Ride</a>';
+                        
+                        if (user.role === 'passenger') {
+                            navHTML += '<a href="passenger-dashboard.html">My Dashboard</a>';
+                        } else if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    </script>
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
 </body>
 </html>

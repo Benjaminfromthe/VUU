@@ -73,18 +73,48 @@
             <h1 style="color: var(--primary-color);">Booking Confirmed!</h1>
             <p>Your seat has been successfully reserved.</p>
             
-            <div class="ref-number">REF: VUU-9824AK</div>
+            <div class="ref-number" id="ref-display">REF: #VUU-2047</div>
 
             <div class="trip-details">
-                <p><strong>Route:</strong> Kigali to Musanze</p>
-                <p><strong>Date & Time:</strong> Tomorrow, 08:30 AM</p>
-                <p><strong>Seats Reserved:</strong> 1 Passenger</p>
-                <p><strong>Total Amount:</strong> 2,500 RWF</p>
+                <p><strong>Passenger Name:</strong> <span id="name-display">John Doe</span></p>
+                <p><strong>Route:</strong> <span id="route-display">Kigali to Musanze</span></p>
+                <p><strong>Date & Time:</strong> <span id="date-display">Tomorrow, 08:30 AM</span></p>
+                <p><strong>Seats Reserved:</strong> <span id="seats-display">1 Passenger</span></p>
+                <p><strong>Total Amount:</strong> <span id="price-display">2,500 RWF</span></p>
+                <p><strong>Payment Method:</strong> <span id="method-display">MTN MoMo</span></p>
             </div>
 
-            <div class="momo-box">
-                <p>To pay with MTN MoMo, dial:</p>
-                <span style="font-size: 1.25rem; display:block; margin-top:0.5rem;">*182*1*1*2500#</span>
+            <!-- Booking Route Map Container -->
+            <div id="confirmation-map-container" style="margin-top: 1.5rem; margin-bottom: 2rem; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; background: #fafafa; text-align: left;">
+                <div style="background: var(--secondary-color); color: white; padding: 0.6rem 1rem; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 0.4rem;">
+                    🗺️ LIVE TRIP ROUTE MAP
+                </div>
+                <div id="confirmation-map" style="width: 100%; height: 260px; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 0.9rem; font-family: sans-serif;">
+                        Locating trip route endpoints...
+                    </div>
+                </div>
+            </div>
+
+            <div class="momo-box" id="pay-instructions-box" style="background-color: #ffcc00; color: black; padding: 1rem; border-radius: 4px; font-weight: bold; margin-bottom: 2rem;">
+                <p id="pay-instruction-text">To pay with MTN MoMo, dial:</p>
+                <span id="ussd-display" style="font-size: 1.25rem; display:block; margin-top:0.5rem; letter-spacing: 1px;">*182*1*1*2500#</span>
+            </div>
+
+            <!-- Smart AI Return Trip Suggestion Block -->
+            <div id="ai-return-trip-suggestion-box" style="margin-top: 2rem; margin-bottom: 2.2rem; border-radius: 12px; border: 2px solid #ffcc00; background: #fffdeb; padding: 1.5rem; text-align: left; transition: all 0.3s ease; display: none;">
+                <div style="font-weight: bold; color: #856404; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 0.6rem;">
+                    🔄 Smart AI Return Trip Suggestion
+                </div>
+                <p id="ai-return-reasoning" style="color: #664d03; font-size: 0.9rem; margin-bottom: 1.2rem; line-height: 1.5;">
+                    Analyzing standard return commuters patterns to recommend optimal timings...
+                </p>
+                <div id="ai-return-recommendations-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
+                    <!-- Suggested choices populated dynamically -->
+                </div>
+                <div style="font-size: 0.8rem; color: #7f640a; line-height: 1.4; display: block; border-top: 1px solid #ebd48e; padding-top: 10px;">
+                    💡 <em>Clicking any option will instantly set up your returning trip details on the booking engine for seamless reservation!</em>
+                </div>
             </div>
 
             <a href="index.html" class="btn btn-secondary">Return Home</a>
@@ -97,5 +127,303 @@
         <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
         <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            
+            if (params.has('ref')) {
+                const ref = params.get('ref');
+                const name = params.get('name');
+                const from_loc = params.get('from');
+                const to_loc = params.get('to');
+                const date = params.get('date');
+                const seats = params.get('seats');
+                const payment = params.get('payment');
+                const price = params.get('price');
+
+                // Update text fields
+                document.getElementById('ref-display').innerText = 'REF: #' + ref.replace('#', '');
+                document.getElementById('name-display').innerText = name || 'Passenger';
+                document.getElementById('route-display').innerText = from_loc + ' to ' + to_loc;
+                
+                // Format date nicely
+                try {
+                    const formattedDate = new Date(date);
+                    if (!isNaN(formattedDate.getTime())) {
+                        document.getElementById('date-display').innerText = formattedDate.toLocaleString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } else {
+                        document.getElementById('date-display').innerText = date;
+                    }
+                } catch (e) {
+                    document.getElementById('date-display').innerText = date;
+                }
+
+                document.getElementById('seats-display').innerText = seats + (Number(seats) > 1 ? ' Passengers' : ' Passenger');
+                document.getElementById('price-display').innerText = Number(price).toLocaleString() + ' RWF';
+
+                // Display dynamic payment actions
+                const payBox = document.getElementById('pay-instructions-box');
+                const payText = document.getElementById('pay-instruction-text');
+                const ussdCode = document.getElementById('ussd-display');
+                const methodText = document.getElementById('method-display');
+
+                if (payment === 'momo') {
+                    methodText.innerHTML = 'MTN Mobile Money <span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 6px; font-weight:bold; text-transform:uppercase;">PAID ✅</span>';
+                    payBox.style.backgroundColor = '#d4edda';
+                    payBox.style.color = '#155724';
+                    payBox.style.border = '1px solid #c3e6cb';
+                    payText.innerText = 'MTN MoMo Sandbox confirmation successful:';
+                    ussdCode.innerText = 'TRANSACTION COMPLETED & SECURED';
+                    payBox.style.display = 'block';
+                } else if (payment === 'airtel') {
+                    methodText.innerText = 'Airtel Money';
+                    payBox.style.backgroundColor = '#e3120b';
+                    payBox.style.color = 'white';
+                    payBox.style.border = 'none';
+                    payText.innerText = 'To pay with Airtel Money, dial:';
+                    ussdCode.innerText = '*182*4*1*2*' + price + '#';
+                    payBox.style.display = 'block';
+                } else {
+                    methodText.innerText = 'Cash to Driver';
+                    payBox.style.backgroundColor = '#e2ebd5';
+                    payBox.style.color = '#333333';
+                    payBox.style.border = 'none';
+                    payText.innerText = 'Please prepare RWF ' + Number(price).toLocaleString() + ' to pay cash to your driver upon boarding.';
+                    ussdCode.innerText = 'Reservation Confirmed - Pay on Board';
+                    payBox.style.display = 'block';
+                }
+
+                // Initialize Google Maps for booking route
+                initConfirmationMap(from_loc, to_loc);
+
+                // Fetch AI Return suggestions
+                fetchReturnSuggestions(from_loc, to_loc, date, seats);
+            }
+
+            async function fetchReturnSuggestions(fromLoc, toLoc, travelDate, seatsCount) {
+                const box = document.getElementById('ai-return-trip-suggestion-box');
+                const reasoning = document.getElementById('ai-return-reasoning');
+                const list = document.getElementById('ai-return-recommendations-list');
+
+                if (!box || !reasoning || !list) return;
+
+                box.style.display = 'block';
+
+                try {
+                    const res = await fetch('/api/ai/suggest-return', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            from: fromLoc,
+                            to: toLoc,
+                            date: travelDate,
+                            seats: seatsCount
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (data.status === 'success' && data.suggestion) {
+                        const sug = data.suggestion;
+                        reasoning.innerText = sug.reasoning;
+                        list.innerHTML = "";
+
+                        sug.suggestions.forEach(item => {
+                            const recommendationBtn = document.createElement('div');
+                            recommendationBtn.style.cssText = `
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                padding: 12px 16px;
+                                background: #ffffff;
+                                border: 1px solid #ffcc00;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                            `;
+                            recommendationBtn.onmouseover = () => {
+                                recommendationBtn.style.boxShadow = '0 3px 10px rgba(255, 204, 0, 0.25)';
+                                recommendationBtn.style.transform = 'translateY(-1px)';
+                            };
+                            recommendationBtn.onmouseout = () => {
+                                recommendationBtn.style.boxShadow = 'none';
+                                recommendationBtn.style.transform = 'none';
+                            };
+
+                            let displayDate = item.date;
+                            try {
+                                const d = new Date(item.date);
+                                if (!isNaN(d.getTime())) {
+                                    displayDate = d.toLocaleDateString('en-US', {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    });
+                                }
+                            } catch (e) {}
+
+                            recommendationBtn.innerHTML = `
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; font-size: 0.92rem; color: #111;">
+                                        ↩️ ${toLoc} &rarr; ${fromLoc}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #555; margin-top: 2px;">
+                                        ${displayDate} at <strong>${item.time}</strong> • ${Number(item.price).toLocaleString()} RWF
+                                    </div>
+                                    <span style="font-size: 0.65rem; background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 4px; display: inline-block;">
+                                        ${item.displayTag}
+                                    </span>
+                                </div>
+                                <button class="btn" style="padding: 6px 12px; font-size: 0.8rem; width: auto; min-height: auto; margin: 0; background: #ffcc00; color: #111; font-weight: bold; border-radius: 4px; float: right;">
+                                    Book Return
+                                </button>
+                            `;
+
+                            recommendationBtn.addEventListener('click', () => {
+                                window.location.href = `book.html?from=${encodeURIComponent(toLoc)}&to=${encodeURIComponent(fromLoc)}&date=${encodeURIComponent(item.date + 'T' + item.time)}`;
+                            });
+
+                            list.appendChild(recommendationBtn);
+                        });
+                    }
+                } catch (e) {
+                    console.error("AI return suggestions failed:", e);
+                    box.style.display = 'none';
+                }
+            }
+
+            // Maps setup for booking confirmation
+            const cities = {
+                "Kigali": { lat: -1.9441, lng: 30.0619 },
+                "Musanze": { lat: -1.5036, lng: 29.6350 },
+                "Huye": { lat: -2.5967, lng: 29.7403 },
+                "Rubavu": { lat: -1.7011, lng: 29.2612 },
+                "Nyagatare": { lat: -1.2989, lng: 30.3422 },
+                "Rwamagana": { lat: -1.9487, lng: 30.4347 },
+                "Muhanga": { lat: -2.0744, lng: 29.7567 }
+            };
+
+            function renderMapsError() {
+                const mapDiv = document.getElementById("confirmation-map");
+                if (!mapDiv) return;
+                mapDiv.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1.5rem; background: #fafafa; text-align: center; border: 1px dashed #ccc; box-sizing: border-box;">
+                        <span style="font-size: 1.5rem; margin-bottom: 0.25rem;">🗺️</span>
+                        <p style="color: #666; font-size: 0.85rem; margin: 0; line-height: 1.4; font-family: sans-serif; max-width:280px;">
+                            To view the active route on this map, configure your <code>GOOGLE_MAPS_PLATFORM_KEY</code> under Secrets in AI Studio.
+                        </p>
+                    </div>
+                `;
+            }
+
+            async function initConfirmationMap(fromName, toName) {
+                try {
+                    const res = await fetch("/api/maps-config");
+                    const config = await res.json();
+                    
+                    if (!config.apiKey || config.apiKey.startsWith("YOUR_") || config.apiKey === "") {
+                        renderMapsError();
+                        return;
+                    }
+
+                    window.initConfMapCallback = () => {
+                        const start = cities[fromName] || cities["Kigali"];
+                        const end = cities[toName] || cities["Musanze"];
+
+                        const map = new google.maps.Map(document.getElementById("confirmation-map"), {
+                            zoom: 10,
+                            center: start,
+                            mapTypeControl: false,
+                            streetViewControl: false,
+                            fullscreenControl: false
+                        });
+
+                        // Add Start Marker
+                        new google.maps.Marker({
+                            position: start,
+                            map: map,
+                            title: `Origin: ${fromName}`,
+                            label: { text: "A", color: "#fff", fontWeight: "bold" }
+                        });
+
+                        // Add End Marker
+                        new google.maps.Marker({
+                            position: end,
+                            map: map,
+                            title: `Destination: ${toName}`,
+                            label: { text: "B", color: "#fff", fontWeight: "bold" }
+                        });
+
+                        // Draw Route Line
+                        new google.maps.Polyline({
+                            path: [start, end],
+                            geodesic: true,
+                            strokeColor: "#dc3545",
+                            strokeOpacity: 0.8,
+                            strokeWeight: 4,
+                            map: map
+                        });
+
+                        // Autocenter to fit both markers perfectly
+                        const bounds = new google.maps.LatLngBounds();
+                        bounds.extend(start);
+                        bounds.extend(end);
+                        map.fitBounds(bounds);
+                    };
+
+                    const script = document.createElement("script");
+                    script.src = `https://maps.googleapis.com/maps/api/js?key=${config.apiKey}&callback=initConfMapCallback`;
+                    script.async = true;
+                    script.onerror = renderMapsError;
+                    document.head.appendChild(script);
+
+                } catch (e) {
+                    console.error("Confirmation map init failed:", e);
+                    renderMapsError();
+                }
+            }
+
+            // Sync user login status and render customized header
+            const userStr = localStorage.getItem("vuu_user");
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    if (nav) {
+                        let navHTML = '<a href="routes.html">Routes</a>' +
+                                      '<a href="book.html">Book Ride</a>';
+                        
+                        if (user.role === 'passenger') {
+                            navHTML += '<a href="passenger-dashboard.html">My Dashboard</a>';
+                        } else if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    </script>
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
 </body>
 </html>

@@ -50,61 +50,66 @@
 
     <main>
         <h1 class="section-title">Create an Account</h1>
+        
+        <!-- Alert Placeholder for error/success feedback -->
+        <div id="alert-placeholder" style="max-width: 600px; margin: 0 auto 1.5rem auto;"></div>
+
         <div style="max-width: 600px; margin: 0 auto;">
             <div class="tabs">
                 <button type="button" class="tab-btn active" id="btn-passenger" onclick="showTab('passenger')">Passenger</button>
                 <button type="button" class="tab-btn" id="btn-driver" onclick="showTab('driver')">Driver</button>
             </div>
             
-            <form action="login.html" method="GET" id="form-passenger" class="tab-content active" style="margin: 0;">
+            <form action="/api/register/passenger" method="POST" id="form-passenger" class="tab-content active" style="margin: 0;">
                 <h3 style="margin-bottom: 1.5rem; text-align:center;">Register as Passenger</h3>
                 <div class="form-group">
                     <label for="p_name">Full Name</label>
-                    <input type="text" id="p_name" required>
+                    <input type="text" id="p_name" name="name" required placeholder="John Doe">
                 </div>
                 <div class="form-group">
                     <label for="p_email">Email Address</label>
-                    <input type="email" id="p_email" required>
+                    <input type="email" id="p_email" name="email" required placeholder="john@example.com">
                 </div>
                 <div class="form-group">
                     <label for="p_phone">Phone Number (MTN/Airtel)</label>
-                    <input type="tel" id="p_phone" required>
+                    <input type="tel" id="p_phone" name="phone" required placeholder="0788123456">
                 </div>
                 <div class="form-group">
                     <label for="p_pass">Password</label>
-                    <input type="password" id="p_pass" required>
+                    <input type="password" id="p_pass" name="password" required>
                 </div>
                 <button type="submit" class="btn">Register</button>
                 <p style="text-align: center; margin-top: 1rem;">Already have an account? <a href="login.html" style="color:var(--secondary-color);">Login Instead</a></p>
             </form>
 
-            <form action="driver-dashboard.html" method="GET" id="form-driver" class="tab-content" style="margin: 0;">
+            <form action="/api/register/driver" method="POST" id="form-driver" class="tab-content" style="margin: 0;">
                 <h3 style="margin-bottom: 1.5rem; text-align:center;">Register as Driver</h3>
                 <div class="form-group">
                     <label for="d_name">Full Name</label>
-                    <input type="text" id="d_name" required>
+                    <input type="text" id="d_name" name="name" required placeholder="Jean Paul">
                 </div>
                 <div class="form-group">
                     <label for="d_email">Email Address</label>
-                    <input type="email" id="d_email" required>
+                    <input type="email" id="d_email" name="email" required placeholder="jean@example.com">
                 </div>
                 <div class="form-group">
                     <label for="d_phone">Phone Number</label>
-                    <input type="tel" id="d_phone" required>
+                    <input type="tel" id="d_phone" name="phone" required placeholder="0788321654">
                 </div>
                 <div class="form-group">
                     <label for="d_license">Driver License Number</label>
-                    <input type="text" id="d_license" required placeholder="e.g. DL-12345678">
+                    <input type="text" id="d_license" name="license_number" required placeholder="e.g. DL-12345678">
                 </div>
                 <div class="form-group">
                     <label for="d_plate">Vehicle Plate Number</label>
-                    <input type="text" id="d_plate" required placeholder="e.g. RAB 123 C">
+                    <input type="text" id="d_plate" name="plate_number" required placeholder="e.g. RAB 123 C">
                 </div>
                 <div class="form-group">
                     <label for="d_pass">Password</label>
-                    <input type="password" id="d_pass" required>
+                    <input type="password" id="d_pass" name="password" required>
                 </div>
                 <button type="submit" class="btn">Register & Start Driving</button>
+                <p style="text-align: center; margin-top: 1rem;">Already have an account? <a href="login.html" style="color:var(--secondary-color);">Login Instead</a></p>
             </form>
         </div>
     </main>
@@ -129,6 +134,50 @@
                 document.getElementById('btn-driver').classList.add('active');
             }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Error parser
+            const params = new URLSearchParams(window.location.search);
+            const placeholder = document.getElementById('alert-placeholder');
+            if (params.get('error') === 'exists') {
+                placeholder.innerHTML = '<div style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold;">An account with this email address already exists.</div>';
+            } else if (params.get('error') === 'failed') {
+                placeholder.innerHTML = '<div style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold;">Registration failed, please try again with valid inputs.</div>';
+            }
+
+            // Sync user login status and render customized header
+            const userStr = localStorage.getItem("vuu_user");
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    if (nav) {
+                        let navHTML = '<a href="routes.html">Routes</a>' +
+                                      '<a href="book.html">Book Ride</a>';
+                        
+                        if (user.role === 'passenger') {
+                            navHTML += '<a href="passenger-dashboard.html">My Dashboard</a>';
+                        } else if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
     </script>
 </body>
 </html>

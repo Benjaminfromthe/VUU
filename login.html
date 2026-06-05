@@ -23,7 +23,10 @@
     <main>
         <h1 class="section-title">Account Login</h1>
         
-        <form action="index.html" method="GET">
+        <!-- Alert Placeholder for error/success feedback -->
+        <div id="alert-placeholder" style="max-width: 600px; margin: 0 auto 1.5rem auto;"></div>
+
+        <form action="/api/login" method="POST">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required placeholder="example@email.com">
@@ -47,5 +50,53 @@
         <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
         <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
     </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            const placeholder = document.getElementById('alert-placeholder');
+            
+            if (params.get('error') === 'invalid') {
+                placeholder.innerHTML = '<div style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold;">Invalid email or password. Please try again.</div>';
+            } else if (params.get('registered') === 'true') {
+                placeholder.innerHTML = '<div style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold;">Registration successful! Please login below.</div>';
+            } else if (params.get('required') === 'true') {
+                placeholder.innerHTML = '<div style="background-color: #fff3cd; color: #856404; padding: 1rem; border-radius: 4px; border: 1px solid #ffeeba; text-align: center; font-weight: bold;">Authentication Required: Please log in to book a ride.</div>';
+            }
+
+            // Sync user login status and render customized header
+            const userStr = localStorage.getItem("vuu_user");
+            if (userStr) {
+                try {
+                    const user = JSON.parse(userStr);
+                    const nav = document.querySelector(".nav-container nav") || document.querySelector("nav");
+                    if (nav) {
+                        let navHTML = '<a href="routes.html">Routes</a>' +
+                                      '<a href="book.html">Book Ride</a>';
+                        
+                        if (user.role === 'passenger') {
+                            navHTML += '<a href="passenger-dashboard.html">My Dashboard</a>';
+                        } else if (user.role === 'driver') {
+                            navHTML += '<a href="driver-dashboard.html">Driver Dashboard</a>';
+                        } else if (user.role === 'admin') {
+                            navHTML += '<a href="admin.html">Admin Panel</a>';
+                        }
+                        
+                        navHTML += '<span style="color: #ffcc00; margin-left:1rem; font-weight:600;">👋 ' + user.name + '</span>' +
+                                   '<a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold; margin-left:1rem;">Logout</a>';
+                        nav.innerHTML = navHTML;
+
+                        document.getElementById("logout-btn").addEventListener("click", (e) => {
+                            e.preventDefault();
+                            localStorage.removeItem("vuu_user");
+                            window.location.href = "index.html";
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
