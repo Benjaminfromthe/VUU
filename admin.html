@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Admin Dashboard</title>
+    <meta name="description" content="Admin overview for VUU Transport.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Admin Panel</a>
+            <nav>
+                <a href="index.html">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="section-title" style="text-align:left;">System Overview</h1>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <p style="text-transform: uppercase; font-weight: bold; color: #666;">Total Bookings</p>
+                <div class="stat-value">1,248</div>
+            </div>
+            <div class="stat-card">
+                <p style="text-transform: uppercase; font-weight: bold; color: #666;">Total Revenue</p>
+                <div class="stat-value" style="color: var(--primary-color);">RWF 14M</div>
+            </div>
+            <div class="stat-card">
+                <p style="text-transform: uppercase; font-weight: bold; color: #666;">Active Drivers</p>
+                <div class="stat-value">86</div>
+            </div>
+            <div class="stat-card">
+                <p style="text-transform: uppercase; font-weight: bold; color: #666;">Active Routes</p>
+                <div class="stat-value">12</div>
+            </div>
+        </div>
+
+        <section style="margin-bottom: 3rem;">
+            <h2 style="margin-bottom: 1rem; color: #333;">Recent Bookings</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Passenger</th>
+                            <th>Route</th>
+                            <th>Payment</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#VUU-1042</td>
+                            <td>Eric N.</td>
+                            <td>Kigali &rarr; Musanze</td>
+                            <td>MTN MoMo</td>
+                            <td>2,500 RWF</td>
+                            <td><span style="color: var(--primary-color); font-weight: bold;">PAID</span></td>
+                        </tr>
+                        <tr>
+                            <td>#VUU-1043</td>
+                            <td>Aline R.</td>
+                            <td>Huye &rarr; Kigali</td>
+                            <td>Cash</td>
+                            <td>2,000 RWF</td>
+                            <td><span style="color: darkorange; font-weight: bold;">PENDING</span></td>
+                        </tr>
+                        <tr>
+                            <td>#VUU-1044</td>
+                            <td>Bosco J.</td>
+                            <td>Kigali &rarr; Rubavu</td>
+                            <td>Airtel Money</td>
+                            <td>3,000 RWF</td>
+                            <td><span style="color: var(--primary-color); font-weight: bold;">PAID</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 style="margin-bottom: 1rem; color: #333;">Registered Drivers</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Driver Name</th>
+                            <th>Phone</th>
+                            <th>Plate Number</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Jean Paul</td>
+                            <td>+250 788 123 456</td>
+                            <td>RAB 123 C</td>
+                            <td>On Trip</td>
+                        </tr>
+                        <tr>
+                            <td>Patrick M.</td>
+                            <td>+250 788 321 654</td>
+                            <td>RAC 555 K</td>
+                            <td>Available</td>
+                        </tr>
+                        <tr>
+                            <td>Innocent R.</td>
+                            <td>+250 788 999 888</td>
+                            <td>RAD 404 B</td>
+                            <td>Offline</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+    </footer>
+</body>
+</html>

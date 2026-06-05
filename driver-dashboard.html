@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Driver Dashboard</title>
+    <meta name="description" content="Manage your trips and earnings on the VUU Transport driver dashboard.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .trip-list {
+            list-style: none;
+        }
+        .trip-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .trip-item.completed {
+            border-left: 5px solid gray;
+            opacity: 0.8;
+        }
+        .trip-item.pending {
+            border-left: 5px solid var(--primary-color);
+        }
+        .trip-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Transport - Driver</a>
+            <nav>
+                <a href="index.html">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="section-title" style="text-align:left;">Dashboard Overview</h1>
+        
+        <div class="dashboard-stats">
+            <div class="stat-card" style="background-color: var(--primary-color);">
+                <p>Today's Earnings</p>
+                <div class="stat-value">34,500 RWF</div>
+            </div>
+            <div class="stat-card">
+                <p>Completed Trips</p>
+                <div class="stat-value">8</div>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom: 1rem; color: #333;">Today's Trips Queue</h2>
+        <ul class="trip-list">
+            <li class="trip-item pending">
+                <div>
+                    <h3>Kigali &rarr; Musanze</h3>
+                    <p style="color: #666; margin-top:0.25rem;">2 Passengers • MTN MoMo Paid</p>
+                    <p style="font-size: 0.9rem; color: #888;">Departure: 14:00 PM</p>
+                </div>
+                <div class="trip-actions">
+                    <button class="btn" style="background-color: var(--primary-color);">Accept</button>
+                    <button class="btn btn-secondary" style="border-color: #dc3545; color: #dc3545;">Decline</button>
+                </div>
+            </li>
+            <li class="trip-item pending">
+                <div>
+                    <h3>Musanze &rarr; Rubavu</h3>
+                    <p style="color: #666; margin-top:0.25rem;">1 Passenger • Cash to Driver</p>
+                    <p style="font-size: 0.9rem; color: #888;">Departure: 17:30 PM</p>
+                </div>
+                <div class="trip-actions">
+                    <button class="btn" style="background-color: var(--primary-color);">Accept</button>
+                    <button class="btn btn-secondary" style="border-color: #dc3545; color: #dc3545;">Decline</button>
+                </div>
+            </li>
+            <li class="trip-item completed">
+                <div>
+                    <h3>Nyagatare &rarr; Kigali</h3>
+                    <p style="color: #666; margin-top:0.25rem;">4 Passengers • Airtel Money Paid</p>
+                    <p style="font-size: 0.9rem; color: #888;">Arrival: 09:15 AM</p>
+                </div>
+                <div style="font-weight: bold; color: gray;">
+                    COMPLETED
+                </div>
+            </li>
+        </ul>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+    </footer>
+</body>
+</html>

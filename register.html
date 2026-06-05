@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Register</title>
+    <meta name="description" content="Create a new passenger or driver account with VUU Transport.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .tab-btn {
+            background: #eee;
+            color: #333;
+            border: none;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 4px 4px 0 0;
+            width: 50%;
+        }
+        .tab-btn.active {
+            background: var(--secondary-color);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Transport</a>
+            <nav>
+                <a href="routes.html">Routes</a>
+                <a href="book.html">Book Ride</a>
+                <a href="login.html">Login</a>
+                <a href="register.html" style="text-decoration:underline;">Register</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="section-title">Create an Account</h1>
+        <div style="max-width: 600px; margin: 0 auto;">
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="btn-passenger" onclick="showTab('passenger')">Passenger</button>
+                <button type="button" class="tab-btn" id="btn-driver" onclick="showTab('driver')">Driver</button>
+            </div>
+            
+            <form action="login.html" method="GET" id="form-passenger" class="tab-content active" style="margin: 0;">
+                <h3 style="margin-bottom: 1.5rem; text-align:center;">Register as Passenger</h3>
+                <div class="form-group">
+                    <label for="p_name">Full Name</label>
+                    <input type="text" id="p_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="p_email">Email Address</label>
+                    <input type="email" id="p_email" required>
+                </div>
+                <div class="form-group">
+                    <label for="p_phone">Phone Number (MTN/Airtel)</label>
+                    <input type="tel" id="p_phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="p_pass">Password</label>
+                    <input type="password" id="p_pass" required>
+                </div>
+                <button type="submit" class="btn">Register</button>
+                <p style="text-align: center; margin-top: 1rem;">Already have an account? <a href="login.html" style="color:var(--secondary-color);">Login Instead</a></p>
+            </form>
+
+            <form action="driver-dashboard.html" method="GET" id="form-driver" class="tab-content" style="margin: 0;">
+                <h3 style="margin-bottom: 1.5rem; text-align:center;">Register as Driver</h3>
+                <div class="form-group">
+                    <label for="d_name">Full Name</label>
+                    <input type="text" id="d_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="d_email">Email Address</label>
+                    <input type="email" id="d_email" required>
+                </div>
+                <div class="form-group">
+                    <label for="d_phone">Phone Number</label>
+                    <input type="tel" id="d_phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="d_license">Driver License Number</label>
+                    <input type="text" id="d_license" required placeholder="e.g. DL-12345678">
+                </div>
+                <div class="form-group">
+                    <label for="d_plate">Vehicle Plate Number</label>
+                    <input type="text" id="d_plate" required placeholder="e.g. RAB 123 C">
+                </div>
+                <div class="form-group">
+                    <label for="d_pass">Password</label>
+                    <input type="password" id="d_pass" required>
+                </div>
+                <button type="submit" class="btn">Register & Start Driving</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
+    </footer>
+
+    <script>
+        function showTab(type) {
+            document.getElementById('form-passenger').classList.remove('active');
+            document.getElementById('form-driver').classList.remove('active');
+            document.getElementById('btn-passenger').classList.remove('active');
+            document.getElementById('btn-driver').classList.remove('active');
+
+            if(type === 'passenger') {
+                document.getElementById('form-passenger').classList.add('active');
+                document.getElementById('btn-passenger').classList.add('active');
+            } else {
+                document.getElementById('form-driver').classList.add('active');
+                document.getElementById('btn-driver').classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

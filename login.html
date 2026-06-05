@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Login</title>
+    <meta name="description" content="Login to your VUU Transport account to manage your rides.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Transport</a>
+            <nav>
+                <a href="routes.html">Routes</a>
+                <a href="book.html">Book Ride</a>
+                <a href="login.html" style="text-decoration:underline;">Login</a>
+                <a href="register.html">Register</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="section-title">Account Login</h1>
+        
+        <form action="index.html" method="GET">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn">Login</button>
+            
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <p>Don't have an account? <a href="register.html" style="color:var(--secondary-color);font-weight:bold;">Register here</a></p>
+                <br>
+                <p><a href="admin.html" style="color:#666; font-size:12px;">Admin Login Prototype</a></p>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
+    </footer>
+</body>
+</html>

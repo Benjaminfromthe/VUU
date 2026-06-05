@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Book a Ride</title>
+    <meta name="description" content="Book your ride with VUU Transport. Select route, seats, and pay with MoMo, Airtel Money, or Cash.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Transport</a>
+            <nav>
+                <a href="routes.html">Routes</a>
+                <a href="book.html">Book Ride</a>
+                <a href="login.html">Login</a>
+                <a href="register.html">Register</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="section-title">Book Your Trip</h1>
+        <form action="confirmation.html" method="GET">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required placeholder="078...">
+            </div>
+            
+            <div class="form-group">
+                <label for="from">From</label>
+                <select id="from" name="from" required>
+                    <option value="Kigali">Kigali</option>
+                    <option value="Musanze">Musanze</option>
+                    <option value="Huye">Huye</option>
+                    <option value="Rubavu">Rubavu</option>
+                    <option value="Nyagatare">Nyagatare</option>
+                    <option value="Rwamagana">Rwamagana</option>
+                    <option value="Muhanga">Muhanga</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="to">To</label>
+                <select id="to" name="to" required>
+                    <option value="Musanze" selected>Musanze</option>
+                    <option value="Kigali">Kigali</option>
+                    <option value="Huye">Huye</option>
+                    <option value="Rubavu">Rubavu</option>
+                    <option value="Nyagatare">Nyagatare</option>
+                    <option value="Rwamagana">Rwamagana</option>
+                    <option value="Muhanga">Muhanga</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="date">Travel Date & Time</label>
+                <input type="datetime-local" id="date" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="seats">Number of Seats</label>
+                <input type="number" id="seats" name="seats" value="1" min="1" max="10" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment">Payment Method</label>
+                <select id="payment" name="payment" required>
+                    <option value="momo">MTN MoMo</option>
+                    <option value="airtel">Airtel Money</option>
+                    <option value="cash">Cash to Driver</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn">Confirm Booking</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VUU Transport - Booking Confirmed</title>
+    <meta name="description" content="Your ride booking is confirmed. View trip details and payment instructions.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .confirmation-card {
+            background-color: white;
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .success-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        .ref-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            background: #f0f8ff;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 1rem 0 2rem;
+            letter-spacing: 2px;
+        }
+        .trip-details {
+            text-align: left;
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+        }
+        .trip-details p {
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        .momo-box {
+            background-color: #ffcc00;
+            color: black;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo">VUU Transport</a>
+            <nav>
+                <a href="routes.html">Routes</a>
+                <a href="book.html">Book Ride</a>
+                <a href="login.html">Login</a>
+                <a href="register.html">Register</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="confirmation-card">
+            <div class="success-icon">✓</div>
+            <h1 style="color: var(--primary-color);">Booking Confirmed!</h1>
+            <p>Your seat has been successfully reserved.</p>
+            
+            <div class="ref-number">REF: VUU-9824AK</div>
+
+            <div class="trip-details">
+                <p><strong>Route:</strong> Kigali to Musanze</p>
+                <p><strong>Date & Time:</strong> Tomorrow, 08:30 AM</p>
+                <p><strong>Seats Reserved:</strong> 1 Passenger</p>
+                <p><strong>Total Amount:</strong> 2,500 RWF</p>
+            </div>
+
+            <div class="momo-box">
+                <p>To pay with MTN MoMo, dial:</p>
+                <span style="font-size: 1.25rem; display:block; margin-top:0.5rem;">*182*1*1*2500#</span>
+            </div>
+
+            <a href="index.html" class="btn btn-secondary">Return Home</a>
+            <br><br>
+            <a href="routes.html" class="btn">View Other Routes</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>Kigali, Rwanda | +250 788 000 000 | info@vuu.rw</p>
+    </footer>
+</body>
+</html>
