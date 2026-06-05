@@ -1,0 +1,36 @@
+<%- include('base', { yield: `
+  <section class="hero text-center py-5">
+    <h1 class="display-4 fw-bold text-vuu-blue mb-3">Seamless Travel Across Rwanda</h1>
+    <p class="lead text-secondary mb-4">Book buses, taxis, and motos anywhere in Kigali and beyond. Fast, safe, and reliable.</p>
+    <div class="d-flex justify-content-center gap-3">
+      <a href="/book" class="btn btn-vuu-green btn-lg shadow-sm px-4">Book a Ride</a>
+      <a href="/routes" class="btn btn-outline-vuu-blue btn-lg px-4">View Routes</a>
+    </div>
+  </section>
+
+  <section class="features mt-5">
+    <div class="row text-center g-4">
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="display-5 text-vuu-green mb-3">📱</div>
+          <h3>MoMo & Airtel Money</h3>
+          <p class="text-secondary text-sm">Pay seamlessly using your local mobile money accounts.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="display-5 text-vuu-blue mb-3">🗺️</div>
+          <h3>Nationwide Routes</h3>
+          <p class="text-secondary text-sm">From Kigali to Rubavu, find daily routes to all major districts.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <div class="display-5 text-vuu-green mb-3">⭐</div>
+          <h3>Trusted Drivers</h3>
+          <p class="text-secondary text-sm">Rate your trips. We keep only the most professional drivers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+` }) %>

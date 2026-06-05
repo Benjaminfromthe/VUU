@@ -82,8 +82,8 @@ export default function App() {
   const [isRegistering, setIsRegistering] = useState(false);
 
   // Rider booking variables
-  const [pickupAddr, setPickupAddr] = useState('Gare du Nord, Paris');
-  const [destAddr, setDestAddr] = useState('Eiffel Tower, Paris');
+  const [pickupAddr, setPickupAddr] = useState('Current Location');
+  const [destAddr, setDestAddr] = useState('');
   const [selectedRideType, setSelectedRideType] = useState<'standard' | 'comfort' | 'premium' | 'moto'>('standard');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -224,53 +224,101 @@ export default function App() {
     return (
       <div className="relative w-full h-full bg-[#060814] overflow-hidden">
         {/* SVG background grid and path */}
-        <svg className="absolute inset-0 w-full h-full opacity-60 select-none" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute inset-0 w-full h-full select-none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          {/* Base map pattern */}
           <defs>
-            <pattern id="tactical-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="1" />
-              <circle cx="0" cy="0" r="1" fill="#00F5FF" />
+            <pattern id="street-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+              <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="1" />
+              <path d="M 40 0 L 40 80 M 0 40 L 80 40" fill="none" stroke="rgba(255, 255, 255, 0.015)" strokeWidth="1" />
             </pattern>
+            
+            <filter id="neon-cyan" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            
+            <filter id="neon-amber" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
-          <rect width="100%" height="100%" fill="url(#tactical-grid)" />
+          <rect width="100%" height="100%" fill="url(#street-grid)" className="opacity-60" />
           
-          {/* Main roadways - Neon Paths */}
-          <path d="M -50 400 Q 200 450 500 200 T 1200 300" stroke="#00F5FF" strokeWidth="2" strokeDasharray="8 4" fill="none" className="opacity-40" />
-          <path d="M 300 0 V 800" stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
-          <path d="M 700 0 V 800" stroke="#FFB800" strokeWidth="1" strokeDasharray="10 10" fill="none" className="opacity-50" />
-          <path d="M 0 600 Q 400 700 1200 400" stroke="#00F5FF" strokeWidth="4" fill="none" style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.5))' }} />
+          {/* Abstract City Blocks */}
+          <path d="M 120 120 h 160 v 80 h -160 z M 400 60 h 120 v 140 h -120 z M 100 350 h 220 v 120 h -220 z M 600 280 h 180 v 100 h -180 z" fill="rgba(255,255,255,0.02)" stroke="rgba(0, 245, 255, 0.08)" strokeWidth="1"/>
 
-          {/* Ambient Radar Blips (Idle Drivers) */}
-          <circle cx="20%" cy="30%" r="2" fill="#FFB800">
-            <animate attributeName="r" values="2; 15; 2" dur="3s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="1; 0; 0" dur="3s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="80%" cy="60%" r="2" fill="#FFB800">
-            <animate attributeName="r" values="2; 20; 2" dur="4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="1; 0; 0" dur="4s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="60%" cy="80%" r="2" fill="#FFB800">
-            <animate attributeName="r" values="2; 10; 2" dur="2.5s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="1; 0; 0" dur="2.5s" repeatCount="indefinite" />
-          </circle>
+          {/* Main roadways */}
+          <path d="M -50 400 Q 200 450 500 200 T 1300 300" stroke="rgba(0, 245, 255, 0.15)" strokeWidth="6" fill="none" />
+          <path d="M 300 -50 V 900" stroke="rgba(255, 184, 0, 0.08)" strokeWidth="4" fill="none" />
+          <path d="M -50 200 Q 400 100 700 800" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="10" fill="none" />
+          
+          {/* Glowing Neon Route Arc */}
+          {!activeRide && (
+            <>
+              {/* Automated path arc starting point to destination */}
+              <path d="M 250 500 Q 400 300 600 150" stroke="#00F5FF" strokeWidth="4" fill="none" strokeDasharray="10 8" filter="url(#neon-cyan)" className="opacity-80">
+                 <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite" />
+              </path>
+            </>
+          )}
+
+          {activeRide && (
+             <path d={`M ${(riderPos.x / 100) * (window.innerWidth || 1200)} ${(riderPos.y / 100) * (window.innerHeight || 800)} Q 400 400 ${(destPos.x / 100) * (window.innerWidth || 1200)} ${(destPos.y / 100) * (window.innerHeight || 800)}`} stroke="#00F5FF" strokeWidth="4" strokeDasharray="8 6" fill="none" filter="url(#neon-cyan)">
+               <animate attributeName="stroke-dashoffset" from="100" to="0" dur="1s" repeatCount="indefinite" />
+             </path>
+          )}
+
+          {/* Pulsing Amber Triangular Icons (Nearby Drivers) */}
+          <g transform="translate(180, 260) scale(0.8)">
+            <polygon points="0,-12 10,8 -10,8" fill="#FFB800" filter="url(#neon-amber)">
+              <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
+            </polygon>
+          </g>
+          <g transform="translate(350, 480) scale(0.6) rotate(45)">
+            <polygon points="0,-12 10,8 -10,8" fill="#FFB800">
+              <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite" />
+            </polygon>
+          </g>
+          <g transform="translate(620, 210) scale(0.9) rotate(-30)">
+            <polygon points="0,-12 10,8 -10,8" fill="#FFB800" filter="url(#neon-amber)">
+              <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite" />
+            </polygon>
+          </g>
+          <g transform="translate(750, 520) scale(0.7) rotate(15)">
+            <polygon points="0,-12 10,8 -10,8" fill="#FFB800">
+              <animate attributeName="opacity" values="0.2;0.9;0.2" dur="3.5s" repeatCount="indefinite" />
+            </polygon>
+          </g>
         </svg>
 
-        {/* Dynamic Route Line */}
-        {activeRide && (
-          <div className="absolute inset-0 pointer-events-none">
-            <svg className="w-full h-full">
-              <line 
-                x1={`${riderPos.x}%`} 
-                y1={`${riderPos.y}%`} 
-                x2={`${destPos.x}%`} 
-                y2={`${destPos.y}%`} 
-                stroke="#00F5FF" 
-                strokeWidth="3" 
-                strokeDasharray="8 6" 
-                className="animate-pulse"
-                style={{ filter: 'drop-shadow(0 0 8px rgba(0,245,255,0.8))' }}
-              />
-            </svg>
-          </div>
+        {/* STATIC PRE-RIDE PINS */}
+        {!activeRide && (
+          <>
+            {/* Start Pin */}
+            <div className="absolute left-[250px] top-[500px] z-10 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+              <div className="relative flex items-center justify-center w-6 h-6 rounded-full border-2 border-[#00FF66] bg-[#060814] shadow-[0_0_15px_rgba(0,255,102,0.4)]">
+                 <div className="absolute inset-0 rounded-full border border-[#00FF66] animate-ping opacity-60"></div>
+                 <div className="w-2.5 h-2.5 bg-[#00FF66] rounded-full shadow-[0_0_10px_#00FF66]"></div>
+              </div>
+            </div>
+
+            {/* Target Pin */}
+            <div className="absolute left-[600px] top-[150px] z-10 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+              <div className="text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] mb-2 bg-[#060814]/80 px-2 py-1 border border-[#00F5FF]/30 backdrop-blur-md rounded shadow-[0_0_15px_rgba(0,245,255,0.2)]">
+                TARGET LOC_01
+              </div>
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-[#00F5FF] bg-[#060814] shadow-[0_0_20px_rgba(0,245,255,0.6)]">
+                 <div className="absolute inset-0 rounded-full border border-[#00F5FF] animate-ping opacity-60"></div>
+                 <div className="w-3 h-3 border-2 border-[#00F5FF] rounded-sm transform rotate-45 shadow-[0_0_10px_#00F5FF]"></div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Map Pins */}
@@ -420,144 +468,6 @@ export default function App() {
                   <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
                   <h3 className="text-base font-semibold text-white">VUU Transport System</h3>
                   <p className="text-xs text-slate-400 mt-1">Bootstrapping local sandbox environment...</p>
-                </div>
-              ) : !user ? (
-                /* AUTH LOGIN / REGISTER SCREEN */
-                <div className="flex-1 p-6 flex flex-col justify-between bg-[#070b16] overflow-y-auto">
-                  <div className="my-auto py-4">
-                    
-                    {/* App Logo */}
-                    <div className="flex flex-col items-center text-center mb-8">
-                      <div className="relative group">
-                         <div className="absolute inset-0 bg-[#FFB800] blur-xl opacity-30 group-hover:opacity-50 transition-opacity rounded-full"></div>
-                         <div className="w-16 h-16 rounded-[20px] bg-gradient-to-tr from-[#FFB800]/20 to-transparent border border-[#FFB800] flex items-center justify-center shadow-[inset_0_0_15px_rgba(255,184,0,0.5)] mb-4 relative z-10">
-                           <Navigation className="w-8 h-8 text-[#FFB800]" />
-                         </div>
-                      </div>
-                      <h2 className="text-2xl font-black text-white tracking-tighter">VUU Transport</h2>
-                      <p className="text-[10px] text-[#00F5FF]/70 font-mono tracking-widest uppercase mt-1">
-                        Secure Mobility Interface
-                      </p>
-                    </div>
-
-                    {/* Auth Error Toast */}
-                    {error && (
-                      <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-rose-400 mb-5 text-[11px] leading-relaxed flex items-start gap-2 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="block font-bold mb-0.5">Authentication Error</strong>
-                          <span>{error}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom Form */}
-                    <form onSubmit={handleAuthSubmit} className="space-y-5">
-                      {isRegistering && (
-                        <>
-                          <div className="relative group">
-                            <input 
-                              type="text" 
-                              required 
-                              value={authName} 
-                              onChange={e => setAuthName(e.target.value)}
-                              placeholder=" " 
-                              className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
-                            />
-                            <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
-                              Full Name
-                            </label>
-                            <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
-                          </div>
-                          
-                          <div className="relative group">
-                            <input 
-                              type="tel" 
-                              required 
-                              value={authPhone} 
-                              onChange={e => setAuthPhone(e.target.value)}
-                              placeholder=" " 
-                              className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
-                            />
-                            <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
-                              Secure Comm Link (Phone)
-                            </label>
-                            <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-[9px] text-[#00F5FF]/70 uppercase tracking-widest mb-3 font-mono">Select Access Node</label>
-                            <div className="grid grid-cols-4 gap-2">
-                              {['customer', 'rider', 'driver', 'admin'].map((role) => (
-                                <button
-                                  key={role}
-                                  type="button"
-                                  onClick={() => setAuthRole(role as UserRole)}
-                                  className={`py-2 text-[9px] uppercase font-mono font-bold rounded-lg border transition-all ${
-                                    authRole === role 
-                                      ? 'bg-[#FFB800]/20 border-[#FFB800] text-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.3)]' 
-                                      : 'bg-transparent border-white/10 text-white/50 hover:border-white/30'
-                                  }`}
-                                >
-                                  {role}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      <div className="relative group">
-                        <input 
-                          type="email" 
-                          required 
-                          value={authEmail} 
-                          onChange={e => setAuthEmail(e.target.value)}
-                          placeholder=" " 
-                          className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
-                        />
-                        <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
-                          Identity Alias (Email)
-                        </label>
-                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
-                      </div>
-
-                      <div className="relative group">
-                        <input 
-                          type="password" 
-                          required 
-                          value={authPassword} 
-                          onChange={e => setAuthPassword(e.target.value)}
-                          placeholder=" " 
-                          className="w-full bg-transparent border-b-2 border-white/20 px-1 py-3 text-sm text-white placeholder-transparent focus:outline-none focus:border-[#00F5FF] peer transition-colors"
-                        />
-                        <label className="absolute left-1 top-3 text-[10px] uppercase font-mono tracking-widest text-[#00F5FF] transition-all peer-placeholder-shown:text-xs peer-placeholder-shown:text-white/50 peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-[9px] peer-focus:text-[#00F5FF]">
-                          Security Key (Password)
-                        </label>
-                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#00F5FF] w-0 peer-focus:w-full transition-all duration-300 shadow-[0_0_10px_#00F5FF]"></div>
-                      </div>
-
-                      <button 
-                        type="submit" 
-                        className="w-full bg-[#FFB800] hover:bg-[#FFB800]/90 text-black font-black uppercase tracking-widest text-[11px] py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(255,184,0,0.4)] flex items-center justify-center gap-2 mt-4"
-                      >
-                        {isRegistering ? 'Initialize Identity' : 'Establish Link'}
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </form>
-                  </div>
-
-                  <div className="text-center pt-4 border-t border-slate-900">
-                    <button 
-                      onClick={() => {
-                        setIsRegistering(!isRegistering);
-                        clearError();
-                      }}
-                      className="text-amber-400 font-bold hover:underline text-xs"
-                    >
-                      {isRegistering ? 'Already have an account? Sign In' : "Don't have an account yet? Create one"}
-                    </button>
-                  </div>
                 </div>
               ) : (
                 /* AUTHENTICATED WORKFLOW HOME PANEL */
@@ -742,8 +652,8 @@ export default function App() {
                                             type="text" 
                                             value={pickupAddr} 
                                             onChange={e => setPickupAddr(e.target.value)}
-                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30"
-                                            placeholder="Current GPS Coordinates..."
+                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30 caret-[#00FF66]"
+                                            placeholder="Current Location"
                                           />
                                         </div>
                                       </div>
@@ -762,7 +672,7 @@ export default function App() {
                                             value={destAddr} 
                                             onChange={e => setDestAddr(e.target.value)}
                                             placeholder="Enter destination..."
-                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30"
+                                            className="bg-transparent text-sm text-white font-medium w-full border-none p-0 focus:outline-none placeholder-white/30 caret-[#00F5FF]"
                                           />
                                         </div>
                                       </div>

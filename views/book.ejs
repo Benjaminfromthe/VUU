@@ -1,0 +1,48 @@
+<%- include('base', { yield: `
+  <div class="row mb-4">
+    <div class="col-12 text-center text-md-start">
+      <h2 class="text-vuu-blue fw-bold">Book a Ride</h2>
+      <p class="text-secondary">Select your route and travel details below.</p>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card border-0 shadow-sm p-4">
+        <form action="/book" method="POST">
+          <div class="mb-3">
+            <label for="route_id" class="form-label text-secondary fw-semibold">Select Route</label>
+            <select class="form-select form-select-lg" id="route_id" name="route_id" required>
+              <option value="" disabled selected>Select starting and ending point</option>
+              <% routes.forEach(route => { %>
+                <option value="<%= route.id %>"><%= route.start_loc %> to <%= route.end_loc %> (<%= route.duration %>) - <%= route.price %> RWF</option>
+              <% }) %>
+            </select>
+          </div>
+          
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label for="date" class="form-label text-secondary fw-semibold">Travel Date/Time</label>
+              <input type="datetime-local" class="form-control form-control-lg" id="date" name="date" required>
+            </div>
+            <div class="col-6 mb-3">
+              <label for="seats" class="form-label text-secondary fw-semibold">Number of Seats</label>
+              <input type="number" class="form-control form-control-lg" id="seats" name="seats" value="1" min="1" max="10" required>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="payment_method" class="form-label text-secondary fw-semibold">Payment Method</label>
+            <select class="form-select form-select-lg" id="payment_method" name="payment_method" required>
+              <option value="MTN MoMo">🟡 MTN Mobile Money</option>
+              <option value="Airtel Money">🔴 Airtel Money</option>
+              <option value="Cash">💵 Cash to Driver</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-vuu-green btn-lg w-100 shadow-sm">Confirm Booking & Pay</button>
+        </form>
+      </div>
+    </div>
+  </div>
+` }) %>

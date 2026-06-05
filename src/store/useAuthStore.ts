@@ -400,7 +400,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ loading: false });
         }
       } else {
-        set({ loading: false });
+        const mockProfile = GET_MOCK_USERS()[0];
+        set({ 
+          user: { id: mockProfile.id, email: mockProfile.email } as any, 
+          profile: mockProfile, 
+          loading: false 
+        });
       }
 
       // Return a dummy unsubscribe function

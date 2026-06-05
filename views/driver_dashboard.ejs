@@ -1,0 +1,50 @@
+<%- include('base', { yield: `
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="text-vuu-blue fw-bold">Driver Dashboard</h2>
+      <p class="text-secondary">Welcome back, Partner. Here are your upcoming trips.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <div class="col-md-4">
+      <div class="card bg-vuu-blue text-white shadow-sm border-0 h-100 p-4">
+        <div class="text-white-50 small text-uppercase fw-bold mb-2">Today's Earnings</div>
+        <h2 class="display-5 fw-bold mb-0">34,500 <span class="fs-4">RWF</span></h2>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-vuu-green text-white shadow-sm border-0 h-100 p-4">
+        <div class="text-white-50 small text-uppercase fw-bold mb-2">Completed Trips</div>
+        <h2 class="display-5 fw-bold mb-0">8 <span class="fs-4">trips</span></h2>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-dark text-white shadow-sm border-0 h-100 p-4 d-flex justify-content-center align-items-center">
+        <button class="btn btn-outline-light w-100 btn-lg fw-bold">Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <h4 class="fw-bold mb-3">Passenger Queue</h4>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item p-4 d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-bold fs-5 text-dark">Kigali &rarr; Musanze</div>
+            <div class="text-secondary small mt-1">2 Passengers • MTN MoMo Paid</div>
+          </div>
+          <button class="btn btn-vuu-green fw-bold">Pick Up</button>
+        </li>
+        <li class="list-group-item p-4 d-flex justify-content-between align-items-center bg-light">
+          <div>
+            <div class="fw-bold fs-5 text-dark">Musanze &rarr; Rubavu</div>
+            <div class="text-secondary small mt-1">1 Passenger • Cash</div>
+          </div>
+          <button class="btn btn-outline-secondary fw-bold" disabled>Waiting List</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+` }) %>

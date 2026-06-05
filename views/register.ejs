@@ -1,0 +1,42 @@
+<%- include('base', { yield: `
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card border-0 shadow-sm p-4">
+        <h2 class="text-center text-vuu-blue mb-4 fw-bold">Create Account</h2>
+        
+        <% if (success) { %>
+            <div class="alert alert-success"><%= success %></div>
+        <% } %>
+        <% if (error) { %>
+            <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+
+        <form action="/register" method="POST">
+          <div class="mb-3">
+            <label for="name" class="form-label text-secondary fw-semibold">Full Name</label>
+            <input type="text" class="form-control form-control-lg" id="name" name="name" required placeholder="John Doe">
+          </div>
+          <div class="mb-3">
+            <label for="phone" class="form-label text-secondary fw-semibold">Phone Number (MTN/Airtel)</label>
+            <input type="tel" class="form-control form-control-lg" id="phone" name="phone" required placeholder="078...">
+          </div>
+          <div class="mb-3">
+            <label for="role" class="form-label text-secondary fw-semibold">Account Type</label>
+            <select class="form-select form-select-lg" id="role" name="role">
+              <option value="passenger">Passenger</option>
+              <option value="driver">Driver (Partner)</option>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label text-secondary fw-semibold">Password</label>
+            <input type="password" class="form-control form-control-lg" id="password" name="password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-vuu-green btn-lg w-100">Register</button>
+        </form>
+        <div class="text-center mt-3">
+          <span class="text-secondary text-sm">Already have an account? <a href="/login" class="text-vuu-blue text-decoration-none">Login here</a>.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+` }) %>

@@ -1,0 +1,65 @@
+<%- include('base', { yield: `
+  <div class="row mb-4 justify-content-center">
+    <div class="col-md-8 col-lg-6 text-center">
+      <h2 class="text-vuu-blue fw-bold">Live Tracking</h2>
+      <p class="text-secondary">Booking ID: <span class="badge bg-dark">#VUU-<%= booking.id %></span></p>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      
+      <!-- Simulated SMS Success -->
+      <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+        <div class="fs-4 me-3">💬</div>
+        <div>
+          <h5 class="alert-heading mb-1 text-success fw-bold">SMS Confirmation Sent!</h5>
+          <p class="mb-0 small">A confirmation message has been sent to your registered phone number. Show this when boarding.</p>
+        </div>
+      </div>
+      
+      <div class="card border-0 shadow-sm p-0 overflow-hidden mb-4">
+        <!-- Static Map Placeholder -->
+        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px; border-bottom: 2px solid #00A550;">
+          <div class="text-center">
+             <div class="fs-1">📍</div>
+             <div class="fw-bold text-vuu-blue mt-2">Driver is on the way</div>
+             <small class="text-secondary">Expected arrival: 5 mins</small>
+          </div>
+        </div>
+        
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+             <h5 class="mb-0 fw-bold">Trip Details</h5>
+             <span class="badge bg-success"><%= booking.status %></span>
+          </div>
+          <hr class="text-muted">
+          <div class="row g-3">
+            <div class="col-6">
+               <small class="text-muted text-uppercase fw-bold">Route</small>
+               <div class="fw-semibold"><%= booking.start_loc %> &rarr; <%= booking.end_loc %></div>
+            </div>
+            <div class="col-6 text-end">
+               <small class="text-muted text-uppercase fw-bold">Seats</small>
+               <div class="fw-semibold"><%= booking.seats %> Reserved</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card border-0 shadow-sm p-4 bg-vuu-blue text-white">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 24px;">👨🏾‍✈️</div>
+          <div>
+            <h5 class="mb-0 fw-bold">Jean Bosco</h5>
+            <small class="text-white-50">Toyota Coaster • RAB 123 C</small>
+          </div>
+          <div class="ms-auto text-warning fs-5">
+            ★★★★☆
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+` }) %>
