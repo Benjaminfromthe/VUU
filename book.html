@@ -6,6 +6,8 @@
     <title>VUU Transport - Book a Ride</title>
     <meta name="description" content="Book your ride with VUU Transport. Select route, seats, and pay with MoMo, Airtel Money, or Cash.">
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="/manifest.json">
+    <script src="/translation.js" defer></script>
 </head>
 <body>
     <header>
@@ -22,96 +24,179 @@
 
     <main>
         <h1 class="section-title">Book Your Trip</h1>
-        <form action="/api/book" method="POST">
-            <div class="form-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" required placeholder="John Doe">
-            </div>
-            <div class="form-group">
-                <label for="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" required placeholder="078...">
-            </div>
-            
-            <div class="form-group">
-                <label for="from">From</label>
-                <select id="from" name="from" required>
-                    <option value="Kigali">Kigali</option>
-                    <option value="Musanze">Musanze</option>
-                    <option value="Huye">Huye</option>
-                    <option value="Rubavu">Rubavu</option>
-                    <option value="Nyagatare">Nyagatare</option>
-                    <option value="Rwamagana">Rwamagana</option>
-                    <option value="Muhanga">Muhanga</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="to">To</label>
-                <select id="to" name="to" required>
-                    <option value="Musanze" selected>Musanze</option>
-                    <option value="Kigali">Kigali</option>
-                    <option value="Huye">Huye</option>
-                    <option value="Rubavu">Rubavu</option>
-                    <option value="Nyagatare">Nyagatare</option>
-                    <option value="Rwamagana">Rwamagana</option>
-                    <option value="Muhanga">Muhanga</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="date">Travel Date & Time</label>
-                <input type="datetime-local" id="date" name="date" required>
-            </div>
 
-            <!-- Smart Price Prediction Widget -->
-            <div id="ai-price-prediction-widget" style="margin-bottom: 1.5rem; background: #f4f9f4; padding: 1.25rem; border-radius: 8px; border: 1px solid #c3e6cb; transition: all 0.3s ease; display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                    <span style="font-weight: bold; color: #155724; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
-                        🧠 Smart AI Price Predictor & Calendar
-                    </span>
-                    <span id="ai-price-prediction-status" style="font-size: 0.75rem; color: #155724; font-family: monospace; background: #e2f5e5; padding: 2px 8px; border-radius: 10px; font-weight: bold;">Analyzing...</span>
+        <!-- Step Progress Bar -->
+        <div class="booking-progress-container" style="max-width: 600px; margin: 0 auto 3rem;">
+            <div class="step active" id="step-marker-1">
+                <span class="step-num">1</span>
+                <span class="step-label">Route & Driver</span>
+            </div>
+            <div class="step-line" id="step-line-1"></div>
+            <div class="step" id="step-marker-2">
+                <span class="step-num">2</span>
+                <span class="step-label">Payment & Passenger</span>
+            </div>
+            <div class="step-line" id="step-line-2"></div>
+            <div class="step" id="step-marker-3">
+                <span class="step-num">3</span>
+                <span class="step-label">Confirmed</span>
+            </div>
+        </div>
+
+        <form action="/api/book" method="POST" id="booking-multistep-form" style="max-width: 600px; margin: 0 auto;">
+            <!-- STEP 1 SECTION: Route & Driver Selection -->
+            <div id="booking-step-1-content" class="booking-form-section">
+                <div class="form-group">
+                    <label for="from">From</label>
+                    <select id="from" name="from" required>
+                        <option value="Kigali">Kigali</option>
+                        <option value="Musanze">Musanze</option>
+                        <option value="Huye">Huye</option>
+                        <option value="Rubavu">Rubavu</option>
+                        <option value="Nyagatare">Nyagatare</option>
+                        <option value="Rwamagana">Rwamagana</option>
+                        <option value="Muhanga">Muhanga</option>
+                    </select>
                 </div>
-                <div id="ai-price-prediction-forecast" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-bottom: 0.75rem; overflow-x: auto;">
-                    <!-- Populated dynamically via checkLivePrices script -->
+                <div class="form-group">
+                    <label for="to">To</label>
+                    <select id="to" name="to" required>
+                        <option value="Musanze" selected>Musanze</option>
+                        <option value="Kigali">Kigali</option>
+                        <option value="Huye">Huye</option>
+                        <option value="Rubavu">Rubavu</option>
+                        <option value="Nyagatare">Nyagatare</option>
+                        <option value="Rwamagana">Rwamagana</option>
+                        <option value="Muhanga">Muhanga</option>
+                    </select>
                 </div>
-                <small style="color: #444; line-height: 1.4; display: block; background: rgba(255,255,255,0.6); padding: 8px; border-radius: 6px;" id="ai-price-prediction-narrative">
-                    Loading pricing forecast... Select route origin and destination to predict cheaper alternative travel days!
-                </small>
-            </div>
-            <div class="form-group">
-                <label for="seats">Number of Seats</label>
-                <input type="number" id="seats" name="seats" value="1" min="1" max="10" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="payment">Payment Method</label>
-                <select id="payment" name="payment" required>
-                    <option value="momo">MTN MoMo</option>
-                    <option value="airtel">Airtel Money</option>
-                    <option value="cash">Cash to Driver</option>
-                </select>
+                <div class="form-group">
+                    <label for="date">Travel Date & Time</label>
+                    <input type="datetime-local" id="date" name="date" required>
+                </div>
+
+                <!-- Smart Price Prediction Widget -->
+                <div id="ai-price-prediction-widget" style="margin-bottom: 2rem; background: var(--card-bg); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--card-border); transition: all 0.3s ease; display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                        <span style="font-weight: bold; color: var(--primary-color); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                            🧠 Smart AI Price Predictor & Calendar
+                        </span>
+                        <span id="ai-price-prediction-status" style="font-size: 0.75rem; color: var(--primary-color); font-family: monospace; background: var(--bg-color); padding: 2px 8px; border-radius: 10px; font-weight: bold;">Analyzing...</span>
+                    </div>
+                    <div id="ai-price-prediction-forecast" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; margin-bottom: 0.75rem; overflow-x: auto;">
+                        <!-- Populated dynamically via checkLivePrices script -->
+                    </div>
+                    <small style="color: var(--text-muted); line-height: 1.4; display: block; padding: 8px; border-radius: 6px;" id="ai-price-prediction-narrative">
+                        Loading pricing forecast... Select route origin and destination to predict cheaper alternative travel days!
+                    </small>
+                </div>
+
+                <!-- Star Rating & Driver Selection Widget -->
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label style="font-weight: 700; color: var(--text-color);">Select Driver Profile & Performance Rating</label>
+                    <div class="driver-profiles-container">
+                        <!-- Driver 1 -->
+                        <div class="driver-profile-card selected" data-driver-id="d1" onclick="selectDriverProfile('d1')">
+                            <div class="driver-avatar-circle" style="background: #0057A8;">J</div>
+                            <div class="driver-info-meta">
+                                <div class="driver-name-title">Jean de Dieu N.</div>
+                                <div class="driver-vehicle-tag">🚍 Toyota Coaster (Plate RA-129B)</div>
+                                <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                    <div class="star-rating-widget" data-rating="4.8">
+                                        ★ ★ ★ ★ ★
+                                    </div>
+                                    <span style="font-weight:700; font-size:0.85rem; color:#f59e0b;">4.8</span>
+                                </div>
+                            </div>
+                            <input type="radio" name="driver_name" id="driver_d1" value="Jean de Dieu N." checked style="display:none;">
+                        </div>
+                        <!-- Driver 2 -->
+                        <div class="driver-profile-card" data-driver-id="d2" onclick="selectDriverProfile('d2')">
+                            <div class="driver-avatar-circle" style="background: #00A550;">E</div>
+                            <div class="driver-info-meta">
+                                <div class="driver-name-title">Emmanuel Mutara</div>
+                                <div class="driver-vehicle-tag">vans Mini Express (Plate RC-881C)</div>
+                                <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                    <div class="star-rating-widget" data-rating="4.9">
+                                        ★ ★ ★ ★ ★
+                                    </div>
+                                    <span style="font-weight:700; font-size:0.85rem; color:#f59e0b;">4.9</span>
+                                </div>
+                            </div>
+                            <input type="radio" name="driver_name" id="driver_d2" value="Emmanuel Mutara" style="display:none;">
+                        </div>
+                        <!-- Driver 3 -->
+                        <div class="driver-profile-card" data-driver-id="d3" onclick="selectDriverProfile('d3')">
+                            <div class="driver-avatar-circle" style="background: #ffcc00; color: black;">S</div>
+                            <div class="driver-info-meta">
+                                <div class="driver-name-title">Sanyu Alice</div>
+                                <div class="driver-vehicle-tag">🚍 VIP Carrier (Plate RE-190A)</div>
+                                <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                    <div class="star-rating-widget" data-rating="4.7">
+                                        ★ ★ ★ ★ ★
+                                    </div>
+                                    <span style="font-weight:700; font-size:0.85rem; color:#f59e0b;">4.7</span>
+                                </div>
+                            </div>
+                            <input type="radio" name="driver_name" id="driver_d3" value="Sanyu Alice" style="display:none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="seats">Number of Seats</label>
+                    <input type="number" id="seats" name="seats" value="1" min="1" max="10" required>
+                </div>
+
+                <!-- Live Seat Indicator Feedback Box -->
+                <div id="seats-indicator-box" style="margin-bottom: 2rem; padding: 1.2rem; border-radius: 12px; display: none;">
+                    <div id="seats-indicator-text" style="font-weight: bold; font-size: 0.95rem; line-height:1.4;"></div>
+                    <div id="seats-suggestion-btn-container" style="margin-top: 0.8rem; display: none;">
+                        <button type="button" id="use-suggestion-btn" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto; min-height: auto; display: inline-block; border-radius: 8px; background: #28a745;">
+                            Switch to Suggested departure
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn" id="btn-next-step" style="width: 100%;">Continue to Payment Details ➔</button>
             </div>
 
-            <!-- Conditional MTN MoMo Phone Number Input -->
-            <div id="momo-phone-group" class="form-group" style="transition: all 0.3s ease; display: none; background: #fffcf0; padding: 1rem; border-radius: 6px; border: 1px solid #ffeeba; margin-bottom: 1.5rem;">
-                <label for="momo_phone" style="font-weight: bold; color: #856404; display: flex; align-items: center; gap: 4px;">
-                    💰 MTN MoMo Phone Number <span style="color:#dc3545;">*</span>
-                </label>
-                <input type="tel" id="momo_phone" name="momo_phone" placeholder="e.g. 0788000000" style="border: 1px solid #ffcc00; border-radius: 4px; padding: 0.6rem; width: 100%; box-sizing: border-box; background: white; color: #111;">
-                <small style="color: #666; margin-top: 6px; display: block; line-height: 1.4;">
-                    Enter an MTN Rwanda number (e.g., +250 78/79). Sandbox can trigger a real push or visual Handset Simulator depending on configurations.
-                </small>
-            </div>
+            <!-- STEP 2 SECTION: Passenger & Payment Details -->
+            <div id="booking-step-2-content" class="booking-form-section" style="display: none;">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="078...">
+                </div>
 
-            <!-- Live Seat Indicator Feedback Box -->
-            <div id="seats-indicator-box" style="margin-bottom: 1.5rem; padding: 1.2rem; border-radius: 6px; display: none;">
-                <div id="seats-indicator-text" style="font-weight: bold; font-size: 0.95rem; line-height:1.4;"></div>
-                <div id="seats-suggestion-btn-container" style="margin-top: 0.8rem; display: none;">
-                    <button type="button" id="use-suggestion-btn" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto; min-height: auto; display: inline-block; border-radius: 4px; background: #28a745;">
-                        Switch to Suggested departure
-                    </button>
+                <div class="form-group">
+                    <label for="payment">Payment Method</label>
+                    <select id="payment" name="payment" required>
+                        <option value="momo">MTN MoMo</option>
+                        <option value="airtel">Airtel Money</option>
+                        <option value="cash">Cash to Driver</option>
+                    </select>
+                </div>
+
+                <!-- Conditional MTN MoMo Phone Number Input -->
+                <div id="momo-phone-group" class="form-group" style="transition: all 0.3s ease; display: none; background: var(--bg-color); padding: 1.2rem; border-radius: 14px; border: 1px solid var(--card-border); margin-bottom: 1.5rem;">
+                    <label for="momo_phone" style="font-weight: bold; color: var(--text-color); display: flex; align-items: center; gap: 4px;">
+                        💰 MTN MoMo Phone Number <span style="color:#dc3545;">*</span>
+                    </label>
+                    <input type="tel" id="momo_phone" name="momo_phone" placeholder="e.g. 0788000000" style="padding: 0.85rem; width: 100%; box-sizing: border-box; background: var(--card-bg); color: var(--text-color);">
+                    <small style="color: var(--text-muted); margin-top: 6px; display: block; line-height: 1.4;">
+                        Enter an MTN Rwanda number (e.g., +250 78/79). Sandbox can trigger a real push or visual Handset Simulator depending on configurations.
+                    </small>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" id="btn-prev-step" style="min-height: 48px;">Back</button>
+                    <button type="submit" class="btn" id="btn-submit-booking">Confirm Booking & Reserve Seat</button>
                 </div>
             </div>
-
-            <button type="submit" class="btn">Confirm Booking</button>
         </form>
     </main>
 
@@ -121,12 +206,101 @@
     </footer>
 
     <script>
+        // Global driver profile selected radio sync helper
+        window.selectDriverProfile = function(id) {
+            document.querySelectorAll('.driver-profile-card').forEach(c => c.classList.remove('selected'));
+            const selectedCard = document.querySelector(`.driver-profile-card[data-driver-id="${id}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                const radioBtn = selectedCard.querySelector('input[type="radio"]');
+                if (radioBtn) {
+                    radioBtn.checked = true;
+                    // Trigger custom feedback
+                    const driverName = radioBtn.value;
+                    const rating = selectedCard.querySelector('.star-rating-widget').getAttribute('data-rating');
+                    if (window.showToast) {
+                        window.showToast(`Selected driver: ${driverName} (${rating} ★ rating)`, 'info');
+                    }
+                }
+            }
+        };
+
         document.addEventListener("DOMContentLoaded", () => {
             const userStr = localStorage.getItem("vuu_user");
             if (!userStr) {
                 alert("Please log in to book a ride.");
                 window.location.href = "login.html?required=true";
                 return;
+            }
+
+            // Wizard multistepping logic
+            const step1Div = document.getElementById('booking-step-1-content');
+            const step2Div = document.getElementById('booking-step-2-content');
+            const btnNext = document.getElementById('btn-next-step');
+            const btnPrev = document.getElementById('btn-prev-step');
+            
+            const marker1 = document.getElementById('step-marker-1');
+            const marker2 = document.getElementById('step-marker-2');
+            const line1 = document.getElementById('step-line-1');
+
+            if (btnNext) {
+                btnNext.addEventListener('click', () => {
+                    const fromSel = document.getElementById('from');
+                    const toSel = document.getElementById('to');
+                    const dateInp = document.getElementById('date');
+                    const seatsInp = document.getElementById('seats');
+
+                    if (fromSel.value === toSel.value) {
+                        if (window.showToast) {
+                            window.showToast("Origin and destination cannot be the same city.", "error");
+                        } else {
+                            alert("Origin and destination cannot be the same city.");
+                        }
+                        return;
+                    }
+                    if (!dateInp.value) {
+                        if (window.showToast) {
+                            window.showToast("Please choose your travel date and time.", "error");
+                        } else {
+                            alert("Please choose your travel date and time.");
+                        }
+                        return;
+                    }
+                    if (parseInt(seatsInp.value || '0') <= 0) {
+                        if (window.showToast) {
+                            window.showToast("Please choose at least 1 seat.", "error");
+                        } else {
+                            alert("Please choose at least 1 seat.");
+                        }
+                        return;
+                    }
+
+                    // Shift visual display
+                    step1Div.style.display = 'none';
+                    step2Div.style.display = 'block';
+
+                    // Update steps indicator states
+                    marker1.classList.remove('active');
+                    marker1.classList.add('done');
+                    line1.classList.add('completed');
+                    marker2.classList.add('active');
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            if (btnPrev) {
+                btnPrev.addEventListener('click', () => {
+                    step2Div.style.display = 'none';
+                    step1Div.style.display = 'block';
+
+                    marker2.classList.remove('active');
+                    line1.classList.remove('completed');
+                    marker1.classList.remove('done');
+                    marker1.classList.add('active');
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
             }
 
             // Default date setup to 2026-06-05T11:00 if not specified

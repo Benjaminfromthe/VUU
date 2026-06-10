@@ -6,6 +6,8 @@
     <title>VUU Transport - Booking Confirmed</title>
     <meta name="description" content="Your ride booking is confirmed. View trip details and payment instructions.">
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="/manifest.json">
+    <script src="/translation.js" defer></script>
     <style>
         .confirmation-card {
             background-color: white;
@@ -68,6 +70,24 @@
     </header>
 
     <main>
+        <!-- Step Progress Bar -->
+        <div class="booking-progress-container" style="max-width: 600px; margin: 1rem auto 3rem;">
+            <div class="step done">
+                <span class="step-num">1</span>
+                <span class="step-label">Route & Driver</span>
+            </div>
+            <div class="step-line completed"></div>
+            <div class="step done">
+                <span class="step-num">2</span>
+                <span class="step-label">Payment & Passenger</span>
+            </div>
+            <div class="step-line completed"></div>
+            <div class="step active">
+                <span class="step-num">3</span>
+                <span class="step-label">Confirmed ticket</span>
+            </div>
+        </div>
+
         <div class="confirmation-card">
             <div class="success-icon">✓</div>
             <h1 style="color: var(--primary-color);">Booking Confirmed!</h1>
