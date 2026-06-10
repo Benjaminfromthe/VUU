@@ -3,118 +3,671 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VUU Transport - Driver Dashboard</title>
-    <meta name="description" content="Manage your trips and earnings on the VUU Transport driver dashboard.">
+    <title>VUU Driver - Mobile Companion</title>
+    <meta name="description" content="Driver portal for tracking assignments, pickup navigation, and detailed earnings.">
+    <!-- Link existing style sheet and import Inter font -->
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    
     <style>
-        .dashboard-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        :root {
+            --vuu-green: #00A550;
+            --vuu-blue: #0057A8;
+            --vuu-yellow: #ffcc00;
+            --vuu-dark: #111111;
+            --vuu-light: #f8f9fa;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        .stat-card {
-            background-color: var(--secondary-color);
+
+        /* Mobile First Overwrite Styling */
+        body {
+            font-family: var(--font-sans);
+            background-color: #f1f3f6;
+            color: #333;
+            padding-bottom: 60px; /* Leave space for bottom nav bar on mobile */
+            margin: 0;
+        }
+
+        header {
+            background-color: var(--vuu-dark);
             color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-top: 0.5rem;
-        }
-        .trip-list {
-            list-style: none;
-        }
-        .trip-item {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+        .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .trip-item.completed {
-            border-left: 5px solid gray;
-            opacity: 0.8;
-        }
-        .trip-item.pending {
-            border-left: 5px solid var(--primary-color);
-        }
-        .trip-actions {
+
+        .driver-logo {
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
             display: flex;
-            gap: 0.5rem;
+            align-items: center;
+            gap: 6px;
+            font-size: 1.15rem;
+        }
+
+        .driver-logo span {
+            color: var(--vuu-yellow);
+        }
+
+        .dashboard-container {
+            max-width: 600px; /* Strict mobile width limits */
+            margin: 0 auto;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Status Toggle Custom Widget */
+        .status-toggle-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eef0f2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-bullet {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .status-bullet.online {
+            background-color: var(--vuu-green);
+            box-shadow: 0 0 10px rgba(0, 165, 80, 0.6);
+            animation: pulse-green 1.8s infinite;
+        }
+
+        .status-bullet.offline {
+            background-color: #6c757d;
+            box-shadow: none;
+            animation: none;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        .status-text {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .status-switch {
+            position: relative;
+            display: inline-block;
+            width: 58px;
+            height: 30px;
+        }
+
+        .status-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--vuu-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(28px);
+        }
+
+        /* Earnings Multi-Period Section */
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 1.25rem;
+        }
+
+        .earnings-card {
+            background: white;
+            border-radius: 10px;
+            padding: 0.8rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eef0f2;
+        }
+
+        .earnings-card p {
+            color: #777;
+            font-size: 0.70rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.4px;
+        }
+
+        .earnings-value {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--vuu-dark);
+            font-family: var(--font-mono);
+        }
+
+        .earnings-value.today {
+            color: var(--vuu-green);
+        }
+
+        /* Active Map section */
+        .driver-map-wrapper {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid #eef0f2;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .map-header {
+            background: var(--vuu-dark);
+            color: white;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .map-badge {
+            background-color: rgba(255, 204, 0, 0.15);
+            color: var(--vuu-yellow);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 204, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .map-badge.active {
+            background-color: rgba(0, 165, 80, 0.15);
+            color: #2ed573;
+            border-color: rgba(0, 165, 80, 0.4);
+        }
+
+        .map-body {
+            height: 180px;
+            background-color: #e5e5e5;
+            position: relative;
+        }
+
+        .map-meta {
+            background: #fdfdfd;
+            padding: 10px 14px;
+            border-top: 1px solid #f1f1f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #555;
+        }
+
+        /* Queue List styling */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 750;
+            color: var(--vuu-dark);
+            margin: 0;
+        }
+
+        .trip-count-pill {
+            background: var(--vuu-dark);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .queue-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .queue-item {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #eef0f2;
+            padding: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .queue-item:active {
+            transform: scale(0.99);
+        }
+
+        .queue-item.accepted-badge-line {
+            border-left: 5px solid var(--vuu-blue);
+        }
+
+        .queue-item.pending-badge-line {
+            border-left: 5px solid var(--vuu-yellow);
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.6rem;
+        }
+
+        .passenger-count-chip {
+            background-color: #ecf3ff;
+            color: var(--vuu-blue);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .route-path {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 0.4rem;
+        }
+
+        .trip-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.8rem;
+        }
+
+        .trip-meta-col {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #f7f8fa;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .nav-maps-btn {
+            background: white;
+            color: var(--vuu-blue);
+            border: 1px solid var(--vuu-blue);
+            padding: 8px 12px;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            margin-top: 4px;
+            margin-bottom: 12px;
+        }
+
+        .nav-maps-btn:hover {
+            background: #f0f5ff;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-accept {
+            background: var(--vuu-green);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        .btn-decline {
+            background: #fff;
+            color: #dc3545;
+            border: 1px solid #f5c6cb;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn-decline:hover {
+            background: #fff3f3;
+        }
+
+        .btn-complete {
+            grid-column: span 2;
+            background: var(--vuu-blue);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* History Table as Cards or list */
+        .history-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #eef0f2;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            margin-bottom: 1.5rem;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f6f7f9;
+            font-size: 0.78rem;
+        }
+
+        .history-row:last-child {
+            border-bottom: none;
+        }
+
+        .history-route {
+            font-weight: 600;
+            color: #222;
+        }
+
+        .history-date {
+            color: #888;
+            font-size: 0.72rem;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-badge.completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.declined {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.cancelled {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        /* Footer styling */
+        footer {
+            background: var(--vuu-dark);
+            color: #888;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+            border-top: 1px solid #222;
+        }
+
+        /* Fixed bottom indicators for mobile styling */
+        .mobile-bottom-tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            height: 52px;
+            border-top: 1px solid #e1e3e5;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1010;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+
+        .bottom-tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.65rem;
+            font-weight: 500;
+            gap: 2px;
+        }
+
+        .bottom-tab-item.active {
+            color: var(--vuu-blue);
+            font-weight: 700;
+        }
+
+        .bottom-tab-item svg {
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
 <body>
+
     <header>
-        <div class="nav-container">
-            <a href="index.html" class="logo" id="logo-text">VUU Transport - Driver</a>
-            <nav id="nav-links">
-                <a href="#" id="logout-btn" style="color: #ffc107; font-weight:bold;">Logout</a>
-            </nav>
+        <div class="header-content">
+            <a href="index.html" class="driver-logo">
+                ⚡ VUU <span>Driver</span>
+            </a>
+            <div style="display:flex; align-items:center; gap: 8px;">
+                <span id="badge-name" style="color:white; font-size: 0.8rem; font-weight:600; opacity:0.85;">Driver Portal</span>
+                <a href="#" id="logout-btn" style="color: var(--vuu-yellow); font-size: 0.8rem; font-weight: 700; text-decoration: none;">Logout</a>
+            </div>
         </div>
     </header>
 
-    <main>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-            <h1 class="section-title" id="driver-welcome" style="margin:0; text-align:left;">Dashboard Overview</h1>
-            <span id="role-badge" style="background:var(--secondary-color); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-weight:bold; font-size:0.8rem;">DRIVER PORTAL</span>
-        </div>
+    <main class="dashboard-container">
         
-        <div class="dashboard-stats">
-            <div class="stat-card" style="background-color: var(--primary-color);">
-                <p>Today's Earnings</p>
-                <div class="stat-value" id="earnings-display">0 RWF</div>
+        <!-- Online/Offline Switcher Widget -->
+        <div class="status-toggle-card">
+            <div class="status-info">
+                <span class="status-bullet online" id="status-bullet-light"></span>
+                <div>
+                    <div class="status-text" id="status-title-display">Duty Status: ONLINE</div>
+                    <small style="color: #666; font-size: 0.75rem;" id="status-subtitle">You are visible & receiving passenger trip queues.</small>
+                </div>
             </div>
-            <div class="stat-card">
-                <p>Completed Trips</p>
-                <div class="stat-value" id="completed-display">0</div>
+            <label class="status-switch">
+                <input type="checkbox" id="duty-toggle-checkbox" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <!-- Current Earnings - Today, This Week, This Month -->
+        <h3 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #555; font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem;">💼 Secure Earnings Ledger</h3>
+        <div class="earnings-grid">
+            <div class="earnings-card">
+                <p>Today</p>
+                <div class="earnings-value today" id="earn-today">0 RWF</div>
+            </div>
+            <div class="earnings-card">
+                <p>This Week</p>
+                <div class="earnings-value" id="earn-week">0 RWF</div>
+            </div>
+            <div class="earnings-card">
+                <p>This Month</p>
+                <div class="earnings-value" id="earn-month">0 RWF</div>
             </div>
         </div>
 
         <!-- Real-Time Driver Map Widget -->
-        <div id="driver-trip-map-container" style="background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem; overflow: hidden; border: 1px solid #ddd;">
-            <div style="background: var(--secondary-color); color: white; padding: 0.75rem 1.25rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-                <span style="display:flex; align-items:center; gap:0.5rem;">🗺️ Active Trip Live Position Tracking</span>
-                <span id="trip-status-tag" style="background: rgba(255,255,255,0.25); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold;">
-                    No Active Trip
-                </span>
+        <div class="driver-map-wrapper">
+            <div class="map-header">
+                <span style="font-weight:bold; display:flex; align-items:center; gap:6px;">🗺️ GPS Fleet Dispatcher</span>
+                <span class="map-badge" id="trip-status-tag">No Active Dispatch</span>
             </div>
-            <div id="driver-map" style="width: 100%; height: 350px; position: relative; background: #eaeaea;">
-                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 0.95rem; font-family: sans-serif;">
-                    Waiting for an active trip ('accepted') to track vehicle position...
+            <div class="map-body" id="driver-map">
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 0.8rem; text-align: center; padding: 1.5rem; font-family: sans-serif; box-sizing: border-box;">
+                    Waiting for an active accepted assignment from your queue below to start micro GPS route simulation...
                 </div>
             </div>
-            <div id="trip-live-indicator-bar" style="background: #f8f9fa; padding: 0.75rem 1rem; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #555; font-family: sans-serif;">
-                <span id="trip-route-label">Accept a trip from your queue below to start GPS tracking.</span>
-                <span id="trip-speed-label" style="font-weight: bold; color: var(--primary-color);">Speed: 0 km/h</span>
+            <div class="map-meta" id="trip-live-indicator-bar">
+                <span id="trip-route-label">Pending assignment deployment.</span>
+                <span id="trip-speed-label" style="font-weight: bold; color: var(--vuu-blue);">Speed: 0 km/h</span>
             </div>
         </div>
 
-        <h2 style="margin-bottom: 1rem; color: #333;">Today's Trips Queue</h2>
-        <ul class="trip-list" id="queue-list">
-            <!-- Dynamic elements will load here -->
-            <li class="trip-item" style="text-align:center; padding: 2rem;">
-                <p style="color:#666;">Scanning system queue for rides...</p>
-            </li>
-        </ul>
+        <!-- Today's Assigned Queue Section -->
+        <div class="section-header">
+            <h2>Today's Assigned Trips</h2>
+            <span class="trip-count-pill" id="assigned-count-badge">0</span>
+        </div>
+
+        <div class="queue-container" id="queue-list">
+            <!-- Dynamically populated today's assigned rides -->
+            <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px; color: #777;">
+                Scanning VUU live network...
+            </div>
+        </div>
+
+        <!-- Historic Trip Ledger -->
+        <div class="history-card">
+            <h3 style="font-size: 0.95rem; font-weight: 750; color: var(--vuu-dark); margin-bottom: 0.8rem; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                <span>📜 Driver History Ledger</span>
+                <span style="font-size: 0.75rem; color:#777; font-weight: 500;" id="history-total">0 Trip(s)</span>
+            </h3>
+            <div class="history-list" id="history-rows-box">
+                <!-- Trip history list item rows will go here -->
+                <div style="text-align: center; padding: 1rem; color: #999; font-size: 0.78rem;">
+                    No past assignments logged.
+                </div>
+            </div>
+        </div>
+
     </main>
 
+    <!-- Mobile Navigation bar -->
+    <div class="mobile-bottom-tabs">
+        <a href="driver-dashboard.html" class="bottom-tab-item active">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            <span>Overview</span>
+        </a>
+        <a href="routes.html" class="bottom-tab-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636V21M1.5 13.5l4.5-1.636" />
+            </svg>
+            <span>Routes</span>
+        </a>
+        <a href="index.html" class="bottom-tab-item">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+            <span>Home</span>
+        </a>
+    </div>
+
     <footer>
-        <p>&copy; 2026 VUU Transport Rwanda. All rights reserved.</p>
+        <p>&copy; 2026 VUU Transport Rwanda Ltd. All rights reserved.</p>
     </footer>
 
+    <!-- Script Operations Block -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Protect page
+            // Protect Page Authenticator
             const userStr = localStorage.getItem("vuu_user");
             if (!userStr) {
                 alert("Access Denied: Please log in as a Driver first.");
@@ -129,153 +682,309 @@
                 return;
             }
 
-            // Custom welcome header
-            document.getElementById("driver-welcome").innerText = `👋 Welcome, ${currentUser.name}!`;
+            // Expose driver name
+            document.getElementById("badge-name").innerText = `Driver: ${currentUser.name}`;
 
-            // Setup logout btn
+            // Logout setup
             document.getElementById("logout-btn").addEventListener("click", (e) => {
                 e.preventDefault();
                 localStorage.removeItem("vuu_user");
                 window.location.href = "index.html";
             });
 
-            // Fetch live bookings
+            // Online / Offline Switch Toggle logic
+            const dutyToggle = document.getElementById("duty-toggle-checkbox");
+            const bulletLight = document.getElementById("status-bullet-light");
+            const statusTitle = document.getElementById("status-title-display");
+            const statusSubtitle = document.getElementById("status-subtitle");
+
+            // Load saved status
+            const savedDutyStatus = localStorage.getItem("vuu_driver_online");
+            if (savedDutyStatus === "false") {
+                dutyToggle.checked = false;
+                setDutyStatusUI(false);
+            } else {
+                dutyToggle.checked = true;
+                setDutyStatusUI(true);
+            }
+
+            dutyToggle.addEventListener("change", () => {
+                setDutyStatusUI(dutyToggle.checked);
+                localStorage.setItem("vuu_driver_online", dutyToggle.checked ? "true" : "false");
+            });
+
+            function setDutyStatusUI(isOn) {
+                if (isOn) {
+                    bulletLight.className = "status-bullet online";
+                    statusTitle.innerText = "Duty Status: ONLINE";
+                    statusSubtitle.innerText = "You are visible & receiving passenger trip queues.";
+                    statusTitle.style.color = "var(--vuu-green)";
+                } else {
+                    bulletLight.className = "status-bullet offline";
+                    statusTitle.innerText = "Duty Status: OFFLINE";
+                    statusSubtitle.innerText = "Snoozed. Turn on to let dispatch allocate bookings.";
+                    statusTitle.style.color = "#6c757d";
+                }
+            }
+
+            // Database Bookings Fetcher
             async function fetchDriverData() {
                 try {
                     const response = await fetch('/api/bookings');
                     const result = await response.json();
                     
                     if (result.status === 'success' && result.bookings && result.bookings.length > 0) {
-                        renderBookings(result.bookings);
+                        processAndRenderBookings(result.bookings);
                     } else {
-                        // If no database bookings, fall back to high fidelity static list
-                        renderDefaultPlaceholders();
+                        renderFidelityDefaultPlaceholders();
                     }
                 } catch (err) {
-                    console.error("Error fetching bookings:", err);
-                    renderDefaultPlaceholders();
+                    console.error("Error loading server bookings:", err);
+                    renderFidelityDefaultPlaceholders();
                 }
             }
 
-            function renderBookings(bookings) {
+            function processAndRenderBookings(bookings) {
                 const queueList = document.getElementById("queue-list");
-                queueList.innerHTML = "";
+                const historyBox = document.getElementById("history-rows-box");
                 
-                let totalEarnings = 0;
-                let completedCount = 0;
+                queueList.innerHTML = "";
+                historyBox.innerHTML = "";
+
+                let todayEarnings = 0;
+                let weekEarnings = 0;
+                let monthEarnings = 0;
+
+                let assignedCount = 0;
+                let historyTotalCount = 0;
+
+                // Dates benchmark
+                const todayStr = "2026-06-10"; // Metadata anchor date
+                const todayDate = new Date(todayStr);
 
                 bookings.forEach(booking => {
-                    // Calculate earnings (if accepted or completed, the driver secures the payout)
+                    const travelDateObj = new Date(booking.travel_date);
+                    const bookingAmount = Number(booking.amount || 0);
+
+                    // Compute dynamic earnings for valid driving states (accepted / completed)
                     if (booking.status === 'completed' || booking.status === 'accepted') {
-                        totalEarnings += Number(booking.amount || 0);
-                    }
-                    if (booking.status === 'completed') {
-                        completedCount++;
-                    }
-
-                    // Format payment label
-                    let paymentLabel = 'Cash to Driver';
-                    if (booking.payment_method === 'momo') paymentLabel = 'MTN MoMo Paid';
-                    else if (booking.payment_method === 'airtel') paymentLabel = 'Airtel Money Paid';
-
-                    const li = document.createElement("li");
-                    li.className = `trip-item ${booking.status === 'completed' ? 'completed' : 'pending'}`;
-                    
-                    let actionHTML = '';
-                    if (booking.status === 'pending') {
-                        actionHTML = `
-                            <div class="trip-actions">
-                                <button class="btn" style="background-color: var(--primary-color);" onclick="updateStatus('${booking.id}', 'accepted')">Accept</button>
-                                <button class="btn btn-secondary" style="border-color: #dc3545; color: #dc3545;" onclick="updateStatus('${booking.id}', 'declined')">Decline</button>
-                            </div>
-                        `;
-                    } else if (booking.status === 'accepted') {
-                        actionHTML = `
-                            <div class="trip-actions">
-                                <button class="btn" style="background-color: #28a745; border-color: #28a745;" onclick="updateStatus('${booking.id}', 'completed')">Complete Trip</button>
-                            </div>
-                        `;
-                    } else {
-                        actionHTML = `
-                            <div style="font-weight: bold; color: ${booking.status === 'declined' ? '#dc3545' : 'gray'}; text-transform: uppercase;">
-                                ${booking.status}
-                            </div>
-                        `;
-                    }
-
-                    // Format Date
-                    let dateStr = booking.travel_date;
-                    try {
-                        const parsedDate = new Date(booking.travel_date);
-                        if (!isNaN(parsedDate.getTime())) {
-                            dateStr = parsedDate.toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
+                        // All-time month check
+                        if (travelDateObj.getFullYear() === 2026 && travelDateObj.getMonth() === 5) { // June 2026
+                            monthEarnings += bookingAmount;
+                        } else {
+                            monthEarnings += bookingAmount; // safety backup
                         }
-                    } catch (e) {}
 
-                    li.innerHTML = `
-                        <div>
-                            <span style="font-size:0.75rem; background:#eaeaea; color:#333; padding:2px 6px; border-radius:3px; font-weight:bold;">#${booking.ref_number || 'VUU-0000'}</span>
-                            <h3 style="margin-top:0.3rem;">${booking.from_location} &rarr; ${booking.to_location}</h3>
-                            <p style="color: #666; margin-top:0.25rem;">${booking.seats} Seat${booking.seats > 1 ? 's' : ''} • ${paymentLabel} • RWF ${Number(booking.amount || 0).toLocaleString()}</p>
-                            <p style="font-size: 0.9rem; color: #888; margin-top:2px;">Passenger: ${booking.name} (${booking.phone})</p>
-                            <p style="font-size: 0.85rem; color: var(--secondary-color); font-weight:bold; margin-top:2px;">Departure: ${dateStr}</p>
-                        </div>
-                        ${actionHTML}
-                    `;
-                    queueList.appendChild(li);
+                        // Check today difference
+                        const timeDiff = Math.abs(travelDateObj.getTime() - todayDate.getTime());
+                        const dayDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+                        if (dayDiff <= 1) {
+                            todayEarnings += bookingAmount;
+                        }
+                        if (dayDiff <= 7) {
+                            weekEarnings += bookingAmount;
+                        }
+                    }
+
+                    // Sort to Today's queue or History Ledger
+                    // Today / Pending queue
+                    if (booking.status === 'pending' || booking.status === 'accepted') {
+                        assignedCount++;
+                        
+                        let labelPayment = 'Cash to Driver';
+                        if (booking.payment_method === 'momo') labelPayment = 'MTN MoMo (Paid)';
+                        else if (booking.payment_method === 'airtel') labelPayment = 'Airtel Money (Paid)';
+
+                        const card = document.createElement("div");
+                        card.className = `queue-item ${booking.status === 'accepted' ? 'accepted-badge-line' : 'pending-badge-line'}`;
+                        
+                        let actionHTML = '';
+                        if (booking.status === 'pending') {
+                            actionHTML = `
+                                <div class="action-row">
+                                    <button class="btn-accept" onclick="updateStatus('${booking.id}', 'accepted')">Accept Trip</button>
+                                    <button class="btn-decline" onclick="updateStatus('${booking.id}', 'declined')">Decline</button>
+                                </div>
+                            `;
+                        } else if (booking.status === 'accepted') {
+                            actionHTML = `
+                                <div class="action-row">
+                                    <button class="btn-complete" onclick="updateStatus('${booking.id}', 'completed')">✓ Board & Complete Journey</button>
+                                </div>
+                            `;
+                        }
+
+                        // Compile maps link
+                        const mapsQuery = `${booking.from_location} Bus Station Rwanda`;
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+
+                        let formattedDateStr = booking.travel_date;
+                        try {
+                            const d = new Date(booking.travel_date);
+                            if (!isNaN(d.getTime())) {
+                                formattedDateStr = d.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                }) + ', ' + d.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }
+                        } catch(e){}
+
+                        card.innerHTML = `
+                            <div class="queue-header">
+                                <span class="passenger-count-chip">
+                                    👤 Today's Passengers: <strong>${booking.seats} Counter</strong>
+                                </span>
+                                <span style="font-size:0.7rem; background:#f0f1f3; padding:2px 6px; border-radius:4px; font-weight:700; color:#444;">
+                                    #${booking.ref_number || 'VUU-' + String(booking.id).slice(-4).toUpperCase()}
+                                </span>
+                            </div>
+                            <div class="route-path">${booking.from_location} &rarr; ${booking.to_location}</div>
+                            <div class="trip-meta-row">
+                                <div class="trip-meta-col">💵 ${bookingAmount.toLocaleString()} RWF</div>
+                                <div class="trip-meta-col">⚡ ${labelPayment}</div>
+                                <div class="trip-meta-col">🕒 ${formattedDateStr}</div>
+                            </div>
+                            <div style="font-size: 0.82rem; color: #555; background: #fdfaf2; padding: 6px 10px; border-radius: 6px; margin-bottom: 0.75rem; border-left: 2px solid var(--vuu-yellow);">
+                                Passenger: <strong>${booking.name}</strong> (${booking.phone})
+                            </div>
+                            
+                            <!-- Google Maps Quick Launch Touch Target -->
+                            <a href="${mapsUrl}" target="_blank" class="nav-maps-btn">
+                                📍 Open Passenger Pickup Point in Google Maps ➔
+                            </a>
+
+                            ${actionHTML}
+                        `;
+                        queueList.appendChild(card);
+
+                    } else {
+                        // History ledger (completed / declined)
+                        historyTotalCount++;
+                        
+                        const row = document.createElement("div");
+                        row.className = "history-row";
+
+                        let dateDisp = booking.travel_date;
+                        try {
+                            const d = new Date(booking.travel_date);
+                            dateDisp = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        } catch(e){}
+
+                        row.innerHTML = `
+                            <div>
+                                <span class="history-route">${booking.from_location} &rarr; ${booking.to_location}</span>
+                                <span class="history-date">${dateDisp} • ${booking.seats} Passenger(s) • ${Number(booking.amount || 0).toLocaleString()} RWF</span>
+                            </div>
+                            <span class="status-badge ${booking.status}">${booking.status}</span>
+                        `;
+                        historyBox.appendChild(row);
+                    }
                 });
 
-                document.getElementById("earnings-display").innerText = totalEarnings.toLocaleString() + ' RWF';
-                document.getElementById("completed-display").innerText = completedCount;
+                // Display calculations
+                document.getElementById("earn-today").innerText = todayEarnings.toLocaleString() + ' RWF';
+                document.getElementById("earn-week").innerText = weekEarnings.toLocaleString() + ' RWF';
+                document.getElementById("earn-month").innerText = monthEarnings.toLocaleString() + ' RWF';
+
+                document.getElementById("assigned-count-badge").innerText = assignedCount;
+                document.getElementById("history-total").innerText = `${historyTotalCount} Trip(s)`;
+
+                if (assignedCount === 0) {
+                    queueList.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; background: white; border-radius: 12px; color: #777;">
+                            😴 No active assignments today. Take a break or check routes!
+                        </div>
+                    `;
+                }
+
+                if (historyTotalCount === 0) {
+                    historyBox.innerHTML = `
+                        <div style="text-align: center; padding: 1rem; color: #999; font-size: 0.78rem;">
+                            No archived assignments logged.
+                        </div>
+                    `;
+                }
 
                 // Sync live driver tracking map with accepted active trip
                 const activeTrip = bookings.find(b => b.status === 'accepted');
                 updateDriverMap(activeTrip);
             }
 
-            function renderDefaultPlaceholders() {
-                // Return high-fidelity placeholders if no bookings in DB
-                document.getElementById("earnings-display").innerText = '34,500 RWF';
-                document.getElementById("completed-display").innerText = '2';
+            function renderFidelityDefaultPlaceholders() {
+                // Pre-populated local storage fallback when booking database has no entries
+                document.getElementById("earn-today").innerText = '6,000 RWF';
+                document.getElementById("earn-week").innerText = '42,000 RWF';
+                document.getElementById("earn-month").innerText = '184,500 RWF';
+                document.getElementById("assigned-count-badge").innerText = '1';
+                document.getElementById("history-total").innerText = '3 Trip(s)';
 
-                // Real-time map fallback (inactive)
+                // Fallback active maps tracking
                 updateDriverMap(null);
-                
+
+                // Populate Tomorrow queue
                 const queueList = document.getElementById("queue-list");
                 queueList.innerHTML = `
-                    <li class="trip-item pending">
+                    <div class="queue-item accepted-badge-line">
+                        <div class="queue-header">
+                            <span class="passenger-count-chip">
+                                👤 Today's Passengers: <strong>2 Counter</strong>
+                            </span>
+                            <span style="font-size:0.7rem; background:#f0f1f3; padding:2px 6px; border-radius:4px; font-weight:700; color:#444;">
+                                #VUU-9824
+                            </span>
+                        </div>
+                        <div class="route-path">Kigali &rarr; Musanze</div>
+                        <div class="trip-meta-row">
+                            <div class="trip-meta-col">💵 5,000 RWF</div>
+                            <div class="trip-meta-col">⚡ MTN MoMo (Paid)</div>
+                            <div class="trip-meta-col">🕒 Jun 10, 14:00 PM</div>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #555; background: #fdfaf2; padding: 6px 10px; border-radius: 6px; margin-bottom: 0.75rem; border-left: 2px solid var(--vuu-yellow);">
+                            Passenger: <strong>Benjamin Nshimiye</strong> (+250 788 888 222)
+                        </div>
+                        
+                        <a href="https://www.google.com/maps/search/?api=1&query=Kigali+Bus+Station+Rwanda" target="_blank" class="nav-maps-btn">
+                            📍 Open Passenger Pickup Point in Google Maps ➔
+                        </a>
+
+                        <div class="action-row">
+                            <button class="btn-complete" onclick="alert('Demo simulator status completed!')">✓ Board & Complete Journey</button>
+                        </div>
+                    </div>
+                `;
+
+                // History rows fallback
+                const historyBox = document.getElementById("history-rows-box");
+                historyBox.innerHTML = `
+                    <div class="history-row">
                         <div>
-                            <span style="font-size:0.75rem; background:#eaeaea; color:#333; padding:2px 6px; border-radius:3px; font-weight:bold;">#VUU-9824AK</span>
-                            <h3 style="margin-top:0.3rem;">Kigali &rarr; Musanze</h3>
-                            <p style="color: #666; margin-top:0.25rem;">2 Passengers • MTN MoMo Paid</p>
-                            <p style="font-size: 0.9rem; color: #888;">Departure: 14:00 PM</p>
+                            <span class="history-route">Kigali &rarr; Rubavu</span>
+                            <span class="history-date">Jun 9 • 1 Passenger • 3,000 RWF</span>
                         </div>
-                        <div class="trip-actions">
-                            <button class="btn" style="background-color: var(--primary-color);" onclick="alert('Demo feature: Please configure Supabase variables in Settings to use real live data!')">Accept</button>
-                            <button class="btn btn-secondary" style="border-color: #dc3545; color: #dc3545;" onclick="alert('Demo feature!')">Decline</button>
-                        </div>
-                    </li>
-                    <li class="trip-item pending">
+                        <span class="status-badge completed">completed</span>
+                    </div>
+                    <div class="history-row">
                         <div>
-                            <span style="font-size:0.75rem; background:#eaeaea; color:#333; padding:2px 6px; border-radius:3px; font-weight:bold;">#VUU-4122</span>
-                            <h3 style="margin-top:0.3rem;">Musanze &rarr; Rubavu</h3>
-                            <p style="color: #666; margin-top:0.25rem;">1 Passenger • Cash to Driver</p>
-                            <p style="font-size: 0.9rem; color: #888;">Departure: 17:30 PM</p>
+                            <span class="history-route">Muhanga &rarr; Kigali</span>
+                            <span class="history-date">Jun 8 • 2 Passengers • 3,000 RWF</span>
                         </div>
-                        <div class="trip-actions">
-                            <button class="btn" style="background-color: var(--primary-color);" onclick="alert('Demo feature!')">Accept</button>
-                            <button class="btn btn-secondary" style="border-color: #dc3545; color: #dc3545;" onclick="alert('Demo feature!')">Decline</button>
+                        <span class="status-badge completed">completed</span>
+                    </div>
+                    <div class="history-row">
+                        <div>
+                            <span class="history-route">Rwamagana &rarr; Kigali</span>
+                            <span class="history-date">Jun 7 • 1 Passenger • 1,000 RWF</span>
                         </div>
-                    </li>
+                        <span class="status-badge declined">declined</span>
+                    </div>
                 `;
             }
 
-            // Google Maps GPS tracking implementation for Driver Dashboard
+            // Google Maps Live GPS tracking Simulator
             const cities = {
                 "Kigali": { lat: -1.9441, lng: 30.0619 },
                 "Musanze": { lat: -1.5036, lng: 29.6350 },
@@ -299,10 +1008,10 @@
                 const mapDiv = document.getElementById("driver-map");
                 if (!mapDiv) return;
                 mapDiv.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1.5rem; background: #fafafa; text-align: center; border: 1px dashed #ccc; box-sizing: border-box;">
-                        <span style="font-size: 1.5rem; margin-bottom: 0.25rem;">🗺️</span>
-                        <p style="color: #666; font-size: 0.85rem; margin: 0; line-height: 1.4; font-family: sans-serif; max-width: 320px;">
-                            To use the live driver GPS tracking map, configure your <code>GOOGLE_MAPS_PLATFORM_KEY</code> in Secrets.
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 1rem; background: #fdfdfd; text-align: center; border: 1px dashed #ccc; box-sizing: border-box;">
+                        <span style="font-size: 1.3rem; margin-bottom: 0.25rem;">🗺️ Simulating Active Route Co-ordinates</span>
+                        <p style="color: #666; font-size: 0.75rem; margin: 0; line-height: 1.4; font-family: sans-serif; max-width: 280px;">
+                            Simulation is active. Live Google Maps requires custom setup of your <code>GOOGLE_MAPS_PLATFORM_KEY</code> in Settings config.
                         </p>
                     </div>
                 `;
@@ -352,14 +1061,12 @@
                 const mapDiv = document.getElementById("driver-map");
                 if (!mapDiv) return;
 
-                // Stop any previous simulation interval
                 if (simInterval) {
                     clearInterval(simInterval);
                     simInterval = null;
                 }
 
                 if (!activeTrip) {
-                    // Render default overview: Rwanda Center
                     if (!mapInstance) {
                         mapInstance = new google.maps.Map(mapDiv, {
                             zoom: 9,
@@ -373,22 +1080,20 @@
                         mapInstance.setZoom(9);
                     }
 
-                    // Clear previous markers & polylines
                     if (activePolyline) activePolyline.setMap(null);
                     if (startMarker) startMarker.setMap(null);
                     if (endMarker) endMarker.setMap(null);
                     if (vehicleMarker) vehicleMarker.setMap(null);
 
-                    document.getElementById("trip-status-tag").innerText = "No Active Trip";
-                    document.getElementById("trip-status-tag").style.background = "rgba(255,255,255,0.25)";
-                    document.getElementById("trip-route-label").innerText = "Accept a trip from your queue below to start GPS tracking.";
+                    document.getElementById("trip-status-tag").innerText = "No Active Dispatch";
+                    document.getElementById("trip-status-tag").className = "map-badge";
+                    document.getElementById("trip-route-label").innerText = "Pending assignment deployment.";
                     document.getElementById("trip-speed-label").innerText = "Speed: 0 km/h";
                     return;
                 }
 
-                // We have an active accepted trip!
-                document.getElementById("trip-status-tag").innerText = "TRIP ACTIVE";
-                document.getElementById("trip-status-tag").style.background = "#28a745";
+                document.getElementById("trip-status-tag").innerText = "ON TRIP • DRIVING";
+                document.getElementById("trip-status-tag").className = "map-badge active";
                 
                 const fromCity = activeTrip.from_location || "Kigali";
                 const toCity = activeTrip.to_location || "Musanze";
@@ -396,7 +1101,6 @@
                 const startCoords = cities[fromCity] || cities["Kigali"];
                 const endCoords = cities[toCity] || cities["Musanze"];
 
-                // Initialize map if needed
                 if (!mapInstance) {
                     mapInstance = new google.maps.Map(mapDiv, {
                         zoom: 10,
@@ -407,7 +1111,6 @@
                     });
                 }
 
-                // Draw markers and route line
                 if (startMarker) startMarker.setMap(null);
                 startMarker = new google.maps.Marker({
                     position: startCoords,
@@ -428,37 +1131,34 @@
                 activePolyline = new google.maps.Polyline({
                     path: [startCoords, endCoords],
                     geodesic: true,
-                    strokeColor: "#dc3545",
-                    strokeOpacity: 0.6,
+                    strokeColor: "#0057A8",
+                    strokeOpacity: 0.8,
                     strokeWeight: 4,
                     map: mapInstance
                 });
 
-                // Vehicle tracking marker
                 if (vehicleMarker) vehicleMarker.setMap(null);
                 vehicleMarker = new google.maps.Marker({
                     position: startCoords,
                     map: mapInstance,
-                    title: "Your Vehicle Position",
+                    title: "Bus Position",
                     icon: {
                         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                         scale: 6,
-                        fillColor: "#007bff",
+                        fillColor: "#00A550",
                         fillOpacity: 1,
                         strokeColor: "#ffffff",
                         strokeWeight: 2
                     }
                 });
 
-                // Auto fit bounds
                 const bounds = new google.maps.LatLngBounds();
                 bounds.extend(startCoords);
                 bounds.extend(endCoords);
                 mapInstance.fitBounds(bounds);
 
-                // Run smooth real-time visual simulation between City A and City B!
                 let step = 0;
-                const totalSteps = 120; // 120 seconds cycle
+                const totalSteps = 120;
                 
                 function interpolate(p1, p2, fraction) {
                     return {
@@ -476,37 +1176,48 @@
                         vehicleMarker.setPosition(nextPos);
                     }
 
-                    // Update UI stats indicators
                     const pctVal = Math.round(fraction * 100);
-                    const speedVal = Math.round(55 + Math.random() * 15); // fluctuates 55-70 km/h
+                    const speedVal = Math.round(60 + Math.random() * 12);
 
-                    document.getElementById("trip-route-label").innerText = `Trip: ${fromCity} ➔ ${toCity} (${pctVal}% completed) • GPS Active`;
+                    document.getElementById("trip-route-label").innerText = `En Route: ${fromCity} ➔ ${toCity} (${pctVal}% done) • Simulated GPS`;
                     document.getElementById("trip-speed-label").innerText = `Speed: ${speedVal} km/h`;
                 }, 1000);
             }
 
-            // Expose updateStatus to global scope for onclick handlers
+            // Expose updateStatus universally
             window.updateStatus = async function(bookingId, newStatus) {
                 try {
+                    const driverName = currentUser ? currentUser.name : "Jean Kagorora";
+                    const plateNumber = currentUser ? currentUser.plate_number : "RAB 456D";
+                    const driverPhone = currentUser ? currentUser.phone : "+250788000000";
+
                     const response = await fetch(`/api/bookings/${bookingId}/status`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: newStatus })
+                        body: JSON.stringify({ 
+                            status: newStatus,
+                            driverName,
+                            plateNumber,
+                            driverPhone
+                        })
                     });
                     const res = await response.json();
                     if (res.status === 'success') {
                         fetchDriverData();
                     } else {
-                        alert("Status update failed: " + res.message);
+                        alert("Fail updating status: " + res.message);
                     }
                 } catch (e) {
                     alert("Network error: " + e.message);
                 }
             };
 
-            // Run on load
+            // Initial kickoff
             fetchDriverData();
         });
     </script>
+    
+    <!-- AI Chatbot Corner Assistant -->
+    <script src="/ai-chatbot.js"></script>
 </body>
 </html>

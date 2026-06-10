@@ -274,6 +274,64 @@ async function findNextAvailableSlot(from: string, to: string, currentNormalized
 }
 
 // ==========================================
+// 📲 AFRICA'S TALKING SMS NOTIFICATIONS SERVICE
+// ==========================================
+async function sendAfricaTalkingSms(to: string, message: string): Promise<any> {
+  const username = process.env.AT_USERNAME || "sandbox";
+  const apiKey = process.env.AT_API_KEY;
+  const senderId = process.env.AT_SENDER_ID;
+
+  if (!apiKey || apiKey.trim() === "" || apiKey.includes("placeholder")) {
+    console.log("------------------------------------------------------------");
+    console.log(`[SMS NOTIFICATION SIMULATOR (Missing AT_API_KEY)]`);
+    console.log(`Recipient: ${to}`);
+    console.log(`Message Content:\n${message}`);
+    console.log("------------------------------------------------------------");
+    return { status: "simulated", reason: "Disabled due to missing AT_API_KEY environment variable" };
+  }
+
+  // Sanitize and format phone number for international Rwanda standards (+250)
+  let formattedPhone = to.trim().replace(/\s+/g, "");
+  if (formattedPhone.startsWith("07")) {
+    formattedPhone = "+250" + formattedPhone.substring(1);
+  } else if (!formattedPhone.startsWith("+")) {
+    formattedPhone = "+" + formattedPhone;
+  }
+
+  const isSandbox = username.toLowerCase() === "sandbox";
+  const url = isSandbox
+    ? "https://api.sandbox.africastalking.com/version1/messaging"
+    : "https://api.africastalking.com/version1/messaging";
+
+  const bodyParams = new URLSearchParams();
+  bodyParams.append("username", username);
+  bodyParams.append("to", formattedPhone);
+  bodyParams.append("message", message);
+  if (senderId && !isSandbox) {
+    bodyParams.append("from", senderId);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "apiKey": apiKey
+      },
+      body: bodyParams.toString()
+    });
+
+    const data = await response.json();
+    console.log(`[Africa's Talking SMS API Response] sent to ${formattedPhone}:`, JSON.stringify(data));
+    return data;
+  } catch (err: any) {
+    console.error(`🔴 Africa's Talking SMS API transmission failed to ${formattedPhone}:`, err);
+    return { status: "error", message: err.message };
+  }
+}
+
+// ==========================================
 // 🌐 REST API ENDPOINTS
 // ==========================================
 
@@ -719,6 +777,53 @@ app.post("/api/bookings/:id/status", async (req, res) => {
   }
 
   if (updated) {
+    // If the booking is accepted, send the automated SMS alerts
+    if (status === 'accepted') {
+      try {
+        let bookingRecord: any = null;
+        if (supabase) {
+          const { data } = await supabase.from('bookings').select('*').eq('id', id).maybeSingle();
+          if (data) bookingRecord = data;
+        }
+        if (!bookingRecord) {
+          bookingRecord = sqliteDb.prepare("SELECT * FROM bookings WHERE id = ?").get(id);
+        }
+
+        if (bookingRecord) {
+          const { driverName, plateNumber, driverPhone } = req.body;
+          const dName = driverName || "Jean Kagorora";
+          const pNum = plateNumber || "RAB 456D";
+
+          let formattedDate = bookingRecord.travel_date;
+          let formattedTime = "";
+          try {
+            const tDate = new Date(bookingRecord.travel_date);
+            if (!isNaN(tDate.getTime())) {
+              formattedDate = tDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+              formattedTime = tDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+            }
+          } catch (e) {}
+
+          const passengerMsg = `📡 VUU Transport Rwanda:\nYour booking is CONFIRMED!\nRef: ${bookingRecord.ref_number || 'VUU-RIDE'}\nRoute: ${bookingRecord.from_location} ➔ ${bookingRecord.to_location}\nDate: ${formattedDate}${formattedTime ? ' at ' + formattedTime : ''}\nDriver: ${dName} (Plate: ${pNum})\nPickup: ${bookingRecord.from_location} Bus Station.\nThank you!`;
+
+          const driverMsg = `⚡ VUU Transport Dispatch:\nYou've accepted trip to ${bookingRecord.to_location}.\nPassenger: ${bookingRecord.name} (${bookingRecord.phone})\nPickup: ${bookingRecord.from_location} Bus Station.\nDrive safe!`;
+
+          // Send passenger SMS
+          sendAfricaTalkingSms(bookingRecord.phone, passengerMsg).catch(err => {
+            console.error("Passenger automated SMS promise failure:", err);
+          });
+
+          // Send driver SMS
+          const finalDriverPhone = driverPhone || "+250788000000"; // Default driver desk fallback
+          sendAfricaTalkingSms(finalDriverPhone, driverMsg).catch(err => {
+            console.error("Driver automated SMS promise failure:", err);
+          });
+        }
+      } catch (smsErr) {
+        console.error("Error planning SMS sending triggers:", smsErr);
+      }
+    }
+
     return res.json({ status: "success", message: `Booking status updated to ${status}` });
   } else {
     return res.status(404).json({ status: "error", message: "Booking record reference not found" });
